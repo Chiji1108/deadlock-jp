@@ -16,6 +16,7 @@ export const collector = sqliteTable(
     runId: text("run_id"),
     leaseUntil: integer("lease_until").notNull().default(0),
     lastScheduledAt: integer("last_scheduled_at").notNull().default(0),
+    measurementStartedAt: integer("measurement_started_at"),
     firstCollectedAt: integer("first_collected_at"),
     lastCollectedAt: integer("last_collected_at"),
     lastAttemptAt: integer("last_attempt_at"),

@@ -2,10 +2,15 @@ export const DAY = 86_400_000;
 export const HOUR = 3_600_000;
 export const JST = 9 * HOUR;
 export const MAX_GAP = 180_000;
-// Production measurement start (JST), for display.
-// Actual counters begin at each stream's first successful observation.
-export const MEASUREMENT_START_LABEL = "2026/9/20 20:44 計測開始";
-export const MEASUREMENT_START_DESCRIPTION = "2026年9月20日 20:44（日本時間）";
+// Existing production data predates the reset feature.
+export const ORIGINAL_MEASUREMENT_START = Date.parse(
+  "2026-09-20T20:44:00+09:00",
+);
+export function measurementStartLabel(at: number) {
+  const date = new Date(at + JST);
+  const time = `${date.getUTCHours()}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+  return `${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()} ${time}`;
+}
 export function dayStart(time: number) {
   return Math.floor((time + JST) / DAY) * DAY - JST;
 }

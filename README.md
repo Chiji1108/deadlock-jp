@@ -1,6 +1,6 @@
 # Deadlock 日本語Twitch配信者ボード
 
-TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIは `references/` の公開画面を移植し、shadcn/ui Base UIとTanStack Tableを使っています。管理画面・認証・Steam登録操作・期間切り替えは含みません。
+TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIは `references/` の公開画面を移植し、shadcn/ui Base UIとTanStack Tableを使っています。管理者ログインはBetter Auth + Better Auth UIを使用します。管理ダッシュボード・Steam登録操作・期間切り替えは含みません。
 
 ## 構成
 
@@ -23,7 +23,7 @@ webとcollectorは同じルートの `.wrangler/state/v3` を使います。Wran
 
 `apps/collector/.dev.vars.example` を `.dev.vars` にコピーしてTwitchのClient ID / Client Secretを設定します。Deadlock APIキーは任意です。ローカルCronはcollector起動後、表示されたポートの `/__scheduled?cron=*+*+*+*+*` で実行できます。このパスはWranglerのローカル機能です。
 
-計測開始日時の表示は `packages/db/src/time.ts` の2つの定数で管理しています。本番の計測開始は **2026/9/20 20:44（日本時間）** です。表示日時からの遡及加算は行わず、各配信の初回観測から計測します。
+計測開始日時はD1の `collector_state.measurement_started_at` で管理し、管理者によるリセット時に更新します。未リセットの既存データは **2026/9/20 20:44（日本時間）** を表示します。表示日時からの遡及加算は行わず、各配信の初回観測から計測します。
 
 ## スキーマ変更・本番反映
 
@@ -42,7 +42,7 @@ bun run --filter web deploy
 bun run --filter collector deploy
 ```
 
-Drizzle Kitが生成する `packages/db/migrations/*/migration.sql` をWranglerが適用します。スキーマの正本は `schema.ts` です。起動時の自動マイグレーションや別系統の `drizzle-kit push` は使いません。
+Drizzle Kitが生成する `packages/db/migrations/*/migration.sql` をWranglerが適用します。スキーマの正本は `schema.ts` と `auth-schema.ts` です。起動時の自動マイグレーションや別系統の `drizzle-kit push` は使いません。
 
 本番のTwitch認証情報はcollectorのWorkers Secrets `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` に設定します。必要なら `DEADLOCK_API_KEY` も設定します。webには外部APIの秘密情報は不要です。
 
@@ -92,3 +92,53 @@ bun scripts/import-links-local.ts --apply  # ローカルD1へ適用
 ```
 
 未観測の配信者は初回のTwitch観測まで一覧に出ません。ランク・試合情報はcollectorの次回以降の実行で順次補完します。本番用のimportではありません。
+
+## 管理者ログイン
+
+`/admin/login` からメール・パスワードでログインできます。ログイン中だけヘッダーに「管理者」を表示し、同じ画面からログアウトできます。一般登録・メール認証・パスワード再設定メールは無効です。Resendなどのメール配信サービスは不要です。Steam紐付け操作はまだ含みません。
+
+### ローカル
+
+`apps/web/.dev.vars.example` を `.dev.vars` にコピーし、`BETTER_AUTH_SECRET` に `openssl rand -base64 48` などで生成した秘密値を設定します。`BETTER_AUTH_URL=http://localhost:3000` とし、開発サーバーを再起動してください。
+
+```sh
+bun run db:migrate:local
+cd apps/web
+bun run admin:create:local
+cd ../..
+bun run dev
+```
+
+作成スクリプトでメールアドレス・15〜128文字のパスワードを入力します。パスワードは非表示で入力し、Better Authのハッシュ形式でD1に保存します。既存アカウントの自動昇格は行いません。
+
+### 本番反映
+
+まず認証テーブルを追加します。既存の配信・集計データは維持します。
+
+```sh
+bun run db:migrate:remote
+cd apps/web
+bunx wrangler secret put BETTER_AUTH_SECRET
+bunx wrangler secret put BETTER_AUTH_URL
+bun run admin:create:remote
+cd ../..
+bun run --filter web deploy
+```
+
+`BETTER_AUTH_SECRET` はローカルと異なるランダムな秘密値（32文字以上）、`BETTER_AUTH_URL` は実際の公開オリジン（例：`https://deadlock.jp`、パスなし）を入力します。CloudflareのGitビルドを使う場合は、webのWorkers設定でもこれらを設定してください。collectorの変更・再デプロイは不要です。秘密値をGitへコミットしないでください。
+
+管理者作成・再設定は対話入力を使うため、`--filter` を使わず `apps/web` ディレクトリで直接実行してください。
+
+パスワードを忘れた場合は `apps/web` で `bun run admin:reset:remote`（ローカルは `admin:reset:local`）で変更できます。変更時にその管理者の既存セッションも失効します。
+
+セッションはD1に保存し、有効期間は24時間、利用中は1時間ごとに更新します。管理者判定はサーバーで現在のDB値を確認します。ログイン試行はIPごとに1分5回までで、制限情報もD1で共有します。認証設定がない環境ではログインを利用不可にし、公開ページは引き続き閲覧できます。
+
+### 計測データのリセット
+
+管理者で `/admin/login` を開き、「計測データをリセット」を押します。確認ダイアログで「リセット」と入力して実行すると、全配信者の配信履歴・日別／時間別／累計集計・プロフィール・ランク・試合情報・APIキャッシュを削除します。Twitch IDとSteam account IDの紐付け、および管理者アカウント・認証セッションは維持します。取り消し操作はありません。
+
+計測開始日時はリセット実行時刻に変わり、次のCronから新規計測します。一覧はいったん空になり、配信者は再観測後に再表示されます。ランク・試合情報も順次再取得します。Deadlock APIの累計試合時間はAPIが返す累計値のため、リセット後にプレイした時間だけにはなりません。
+
+削除と開始日時の更新はD1 batchで一括確定します。実行中collectorの所有権を失効し、古い観測・補完結果の書き戻しと、同じリセット要求の再送による二重削除を防ぎます。
+
+導入時は `bun run db:migrate:remote` を先に実行し、collectorとwebの両方をデプロイしてください。両方の反映が完了してからボタンを使います。マイグレーション自体ではデータはリセットされません。

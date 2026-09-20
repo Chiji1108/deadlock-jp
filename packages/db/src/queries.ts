@@ -13,7 +13,14 @@ import {
 import { collector, daily, hourly, sessions, streamers as s } from "./schema";
 import type { StreamerRecord } from "./schema";
 import type { Database } from "./index";
-import { DAY, HOUR, MAX_GAP, dayStart, heatIndex } from "./time";
+import {
+  DAY,
+  HOUR,
+  MAX_GAP,
+  ORIGINAL_MEASUREMENT_START,
+  dayStart,
+  heatIndex,
+} from "./time";
 import { parseFilters } from "./types";
 import type {
   Activity,
@@ -85,6 +92,8 @@ export async function getStatus(
     .where(eq(collector.id, 1))
     .get();
   return {
+    measurementStartedAt:
+      row?.measurementStartedAt ?? ORIGINAL_MEASUREMENT_START,
     firstCollectedAt: row?.firstCollectedAt ?? null,
     lastCollectedAt: row?.lastCollectedAt ?? null,
     state: row?.state ?? "unconfigured",

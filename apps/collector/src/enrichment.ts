@@ -1,11 +1,11 @@
-import { and, asc, cache, collector, eq, exists, isNotNull, lte, streamers } from 'db';
+import { and, asc, cache, collector, eq, exists, isNotNull, lte, sql, streamers } from 'db';
 import type { Database, StreamerRecord } from 'db';
 import { renewRun } from 'db/ingestion';
 import type { parseHistory, parseRank } from './deadlock-model';
 import type { HeroAsset } from './deadlock-model';
 import { createDeadlockClient } from './deadlock-client';
 import type { Result } from './deadlock-client';
-async function heroes(db: Database, client: ReturnType<typeof createDeadlockClient>): Promise<HeroAsset[]> {
+async function heroes(db: Database, runId: string, client: ReturnType<typeof createDeadlockClient>): Promise<HeroAsset[]> {
 	const saved = await db.select().from(cache).where(eq(cache.key, 'heroes')).get();
 	if (saved && saved.expiresAt > Date.now()) return JSON.parse(saved.value);
 	const result = await client.heroes();
@@ -13,7 +13,16 @@ async function heroes(db: Database, client: ReturnType<typeof createDeadlockClie
 		const data = { value: JSON.stringify(result.value), expiresAt: Date.now() + 86_400_000 };
 		await db
 			.insert(cache)
-			.values({ key: 'heroes', ...data })
+			.select(
+				db
+					.select({
+						key: sql<string>`'heroes'`.as('key'),
+						value: sql<string>`${data.value}`.as('value'),
+						expiresAt: sql<number>`${data.expiresAt}`.as('expiresAt'),
+					})
+					.from(collector)
+					.where(and(eq(collector.id, 1), eq(collector.runId, runId))),
+			)
 			.onConflictDoUpdate({ target: cache.key, set: data });
 		return result.value;
 	}
@@ -28,7 +37,7 @@ export async function refreshEnrichment(db: Database, runId: string, apiKey?: st
 		.limit(5);
 	if (!rows.length) return;
 	const client = createDeadlockClient(apiKey);
-	const assets = await heroes(db, client);
+	const assets = await heroes(db, runId, client);
 	for (const row of rows) {
 		await renewRun(db, runId);
 		const account = row.steamAccountId!;

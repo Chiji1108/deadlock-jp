@@ -38,6 +38,7 @@ export interface RankingRow extends Metrics {
   deadlockActivity: Activity | null;
 }
 export interface Status {
+  measurementStartedAt: number;
   lastCollectedAt: number | null;
   firstCollectedAt: number | null;
   state: "unconfigured" | "collecting" | "ready" | "error";

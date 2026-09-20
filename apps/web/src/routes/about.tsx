@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { MEASUREMENT_START_DESCRIPTION } from 'db/time'
+import { createFileRoute, getRouteApi, Link } from '@tanstack/react-router'
+import { measurementStartLabel } from 'db/time'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -11,6 +11,7 @@ export const Route = createFileRoute('/about')({
   }),
 })
 function About() {
+  const { measurementStartedAt } = getRouteApi('__root__').useLoaderData()
   return (
     <article className="mx-auto flex w-full max-w-2xl flex-col gap-6 text-sm leading-7 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_p]:text-muted-foreground">
       <Button
@@ -38,7 +39,7 @@ function About() {
       <section>
         <h2>データの収集開始日</h2>
         <p>
-          {MEASUREMENT_START_DESCRIPTION}
+          {measurementStartLabel(measurementStartedAt)}（日本時間）
           からデータを収集しています。それ以前の配信履歴は含まれません。
         </p>
       </section>

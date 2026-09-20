@@ -1,0 +1,1 @@
+ALTER TABLE `collector_state` ADD `measurement_started_at` integer;

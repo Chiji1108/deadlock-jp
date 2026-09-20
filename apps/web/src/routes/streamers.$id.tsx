@@ -25,7 +25,11 @@ function Detail() {
   return (
     <>
       <CollectionNotice status={status} />
-      <StreamerDetailView data={data} fresh={status.fresh} />
+      <StreamerDetailView
+        data={data}
+        fresh={status.fresh}
+        measurementStartedAt={status.measurementStartedAt}
+      />
     </>
   )
 }

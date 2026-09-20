@@ -10,11 +10,15 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { dateTime, LoadingPanel } from '@/components/dashboard-ui'
 import { fetchStatus } from '@/server/functions'
+import { fetchAdmin } from '@/server/auth.functions'
 import { useAutoRefresh } from '@/hooks/use-auto-refresh'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
-  loader: () => fetchStatus(),
+  loader: async () => {
+    const [status, auth] = await Promise.all([fetchStatus(), fetchAdmin()])
+    return { ...status, admin: auth.admin }
+  },
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -67,7 +71,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             >
               Deadlock 日本語Twitch配信者ボード
             </Link>
-            <nav aria-label="メインナビゲーション">
+            <nav
+              aria-label="メインナビゲーション"
+              className="flex items-center gap-1"
+            >
+              {/* The shell can render before the root loader has completed. */}
+              {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+              {status?.admin && (
+                <Link
+                  to="/admin/login"
+                  className="text-xs text-muted-foreground"
+                >
+                  管理者
+                </Link>
+              )}
               <Button
                 nativeButton={false}
                 render={<Link to="/about" />}

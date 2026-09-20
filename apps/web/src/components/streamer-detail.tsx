@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import type { StreamerData } from 'db/types'
-import { MEASUREMENT_START_LABEL } from 'db/time'
+import { measurementStartLabel } from 'db/time'
 import { DeadlockRank } from './deadlock-rank'
 import { DeadlockActivity } from './deadlock-activity'
 import { StreamingHoursHeatmap } from './streaming-hours-heatmap'
@@ -14,8 +14,10 @@ import { Empty, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 export function StreamerDetailView({
   data,
   fresh,
+  measurementStartedAt,
 }: {
   data: StreamerData
+  measurementStartedAt: number
   fresh: boolean
 }) {
   const { streamer, summary } = data
@@ -78,7 +80,7 @@ export function StreamerDetailView({
             </span>
           </div>
           <span className="text-xs text-muted-foreground">
-            {MEASUREMENT_START_LABEL}
+            {measurementStartLabel(measurementStartedAt)} 計測開始
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

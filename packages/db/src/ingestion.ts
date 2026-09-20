@@ -74,10 +74,17 @@ export async function applyObservation(
       .from(collector)
       .where(and(eq(collector.id, 1), eq(collector.runId, runId))),
   );
-  // Insert a zero-counter identity separately. A superseded run can at worst leave
-  // an invisible identity; observations and counters remain fenced and atomic.
+  // Reset invalidates run ownership, including identity creation.
   if (!old)
-    await db.insert(streamers).values({ twitchId: id }).onConflictDoNothing();
+    await db
+      .insert(streamers)
+      .select(
+        db
+          .select({ twitchId: sql<string>`${id}`.as("twitchId") })
+          .from(collector)
+          .where(and(eq(collector.id, 1), owner)),
+      )
+      .onConflictDoNothing();
   const guard = and(
     owner,
     exists(

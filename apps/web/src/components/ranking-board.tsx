@@ -2,7 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Filters, RankingRow, Sort } from 'db/types'
-import { MEASUREMENT_START_LABEL } from 'db/time'
+import { measurementStartLabel } from 'db/time'
 import type { getRanking } from 'db/queries'
 import { DataTable } from './data-table'
 import type { DataTableFeatures } from './data-table'
@@ -124,7 +124,7 @@ export function RankingBoard({
       <h1 className="sr-only">Deadlock 日本語Twitch配信者ボード</h1>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <span className="text-xs text-muted-foreground">
-          {MEASUREMENT_START_LABEL}
+          {measurementStartLabel(status.measurementStartedAt)} 計測開始
         </span>
         <FieldGroup className="ml-auto w-32 shrink-0">
           <Field orientation="horizontal">
