@@ -1,13 +1,12 @@
 # Deadlock 日本語Twitch配信者ボード
 
-TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIは `references/` の公開画面を移植し、shadcn/ui Base UIとTanStack Tableを使っています。管理者ログインはBetter Auth + Better Auth UIを使用します。管理者は配信者詳細からSteamを紐付けできます。管理ダッシュボード・期間切り替えは含みません。
+TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIはshadcn/ui Base UIとTanStack Tableを使っています。管理者ログインはBetter Auth + Better Auth UIを使用します。管理者は配信者詳細からSteamを紐付けできます。管理ダッシュボード・期間切り替えは含みません。
 
 ## 構成
 
 - `packages/db`: Drizzleスキーマ、D1接続、公開クエリ、原子的な集計処理、マイグレーション。
 - `apps/web`: Workers上のSSR。初期HTMLに一覧・詳細を含みます。ソート・LIVE絞り込み・ページングはURLを使ってサーバー側で実行します。
 - `apps/collector`: 毎分Cronで日本語Deadlock配信を収集。HTTP経由の収集・DB更新エンドポイントは公開しません。
-- `references`: 変更しない移植元。
 
 ## ローカル開発
 
@@ -54,7 +53,7 @@ Drizzle Kitが生成する `packages/db/migrations/*/migration.sql` をWrangler�
 - Cronの重複を期限付きロックで排除し、観測バージョンと実行IDで古い書き込みを防ぎます。配信区間・時間別・日別・累計をDrizzleのD1 batchで同時確定します。
 - Twitch一覧の全ページと、一覧から消えた配信者の再確認が成功してから集計します。API失敗を配信終了として扱いません。プロフィール画像は約24時間キャッシュします。
 - 毎分の生サンプルは保存しません。累計・日別・時間別・配信区間を残し、将来の期間集計に対応します。詳細のヒートマップは直近最大90日、最近の配信は20件です。
-- Steam未紐付けはランク・試合時間を「—」で表示します。後日のimport先は `streamers.twitch_id` と `steam_account_id`（32bit account ID）。未観測のTwitch IDも先に格納でき、初回観測まで公開一覧に出ません。ローカルへの紐付けimportは下記スクリプトで実行できます。
+- Steam未紐付けはランク・試合時間を「—」で表示します。管理者は配信者詳細画面からSteamを紐付けできます。
 - Steam紐付け済みで、日本語Deadlock配信中と確認できた人だけ、ランク・通常モードの累計試合時間・直近20試合を約1時間ごとに更新（更新予定時刻が古い順に毎分最大5人）。オフライン・別カテゴリ配信中・未観測の人は取得せず、最後の取得値を保持します。配信再開時に更新予定時刻を過ぎていれば再び対象になり、1時間の更新間隔や失敗時の待機時間は維持します。一時失敗は前回値を保持しバックオフ、403/404は対象値を消去します。紐付け変更時は旧アカウントのキャッシュを消し `enrichment_due_at` を0にする必要があります。
 - `collector_state` と `streamers.enrichment_error` で取得状況を確認できます。Twitch成功時刻とDeadlock補完失敗は分けて扱います。
 
@@ -80,18 +79,6 @@ bun test tests
 ```
 
 API仕様を更新する際はこの手順で両方を再生成し、生成差分を確認します。個別更新は `api:generate:deadlock` / `api:generate:twitch` です。パス・パラメータ・レスポンスは生成型を使い、受信JSONの異常値チェックとタイムアウト・HTTPエラー処理は `deadlock-client.ts` / `deadlock-model.ts` / `twitch.ts` に残しています。
-
-## ローカルへの紐付けimport
-
-`archive/twitch-steam-links.json` の `{ twitchId, accountId, steamId64 }` 配列を取り込みます。ID整合性・重複・既存紐付けとの競合を事前検証し、既存の配信計測値は維持します。同じデータの再実行は変更なしになります。
-
-```sh
-cd packages/db
-bun scripts/import-links-local.ts          # 事前確認のみ
-bun scripts/import-links-local.ts --apply  # ローカルD1へ適用
-```
-
-未観測の配信者は初回のTwitch観測まで一覧に出ません。ランク・試合情報は、日本語Deadlock配信中にcollectorが順次補完します。本番用のimportではありません。
 
 ## 管理者ログイン
 
