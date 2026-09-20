@@ -1,6 +1,5 @@
 import { SteamLinkError } from 'db/steam-links'
-import createClient from 'openapi-fetch'
-import type { paths } from 'deadlock/api'
+import { createDeadlockApi } from 'deadlock'
 import { parseHeroes, parseRank } from 'deadlock/model'
 
 export const steamProfileUrl = (id: number) =>
@@ -107,12 +106,7 @@ export function matchPlayers(value: unknown, matchId: number) {
   })
 }
 export function steamApi(apiKey?: string, request: typeof fetch = fetch) {
-  const client = createClient<paths>({
-    baseUrl: 'https://api.deadlock-api.com',
-    fetch: request,
-    headers: apiKey ? { 'X-API-Key': apiKey } : {},
-    querySerializer: { array: { style: 'form', explode: false } },
-  })
+  const client = createDeadlockApi(apiKey, request, 15_000)
   async function read<T>(
     pending: Promise<{ data?: T; response: Response }>,
     unavailable: number[] = [],
@@ -137,62 +131,16 @@ export function steamApi(apiKey?: string, request: typeof fetch = fetch) {
       throw new SteamLinkError('APIからデータが返りませんでした。')
     return result.data
   }
-  const signal = () => AbortSignal.timeout(15000)
   return {
     search: async (query: string) =>
-      profiles(
-        (await read(
-          client.GET('/v1/players/steam-search', {
-            params: {
-              query: {
-                search_query: query,
-                limit: 20,
-                min_matches_played_last_30d: 0,
-              },
-            },
-            signal: signal(),
-          }),
-          [404],
-        )) ?? [],
-      ),
+      profiles((await read(client.search(query), [404])) ?? []),
     profiles: async (ids: number[]) =>
-      profiles(
-        (await read(
-          client.GET('/v1/players/steam', {
-            params: { query: { account_ids: ids } },
-            signal: signal(),
-          }),
-          [404],
-        )) ?? [],
-      ),
+      profiles((await read(client.profiles(ids), [404])) ?? []),
     rank: async (id: number) => {
-      const value = await read(
-        client.GET('/v1/players/{account_id}/rank', {
-          params: { path: { account_id: id } },
-          signal: signal(),
-        }),
-        [403, 404],
-      )
+      const value = await read(client.rank(id), [403, 404])
       return value === null ? null : parseRank(value)
     },
-    match: async (id: number) =>
-      matchPlayers(
-        await read(
-          client.GET('/v1/matches/{match_id}/metadata', {
-            params: { path: { match_id: id } },
-            signal: signal(),
-          }),
-        ),
-        id,
-      ),
-    heroes: async () =>
-      parseHeroes(
-        await read(
-          client.GET('/v1/assets/heroes', {
-            params: { query: { language: 'japanese' } },
-            signal: signal(),
-          }),
-        ),
-      ),
+    match: async (id: number) => matchPlayers(await read(client.match(id)), id),
+    heroes: async () => parseHeroes(await read(client.heroes())),
   }
 }

@@ -8,6 +8,7 @@ import type { Result } from 'deadlock';
 async function heroes(db: Database, runId: string, client: ReturnType<typeof createDeadlockClient>): Promise<HeroAsset[]> {
 	const saved = await db.select().from(cache).where(eq(cache.key, 'heroes')).get();
 	if (saved && saved.expiresAt > Date.now()) return JSON.parse(saved.value);
+	const startedAt = Date.now();
 	const result = await client.heroes();
 	if (result.kind === 'ok') {
 		const data = { value: JSON.stringify(result.value), expiresAt: Date.now() + 86_400_000 };
@@ -26,6 +27,14 @@ async function heroes(db: Database, runId: string, client: ReturnType<typeof cre
 			.onConflictDoUpdate({ target: cache.key, set: data });
 		return result.value;
 	}
+	if (result.kind === 'error')
+		console.warn('collector.heroes.failed', {
+			runId,
+			durationMs: Date.now() - startedAt,
+			error: result.error,
+			retryAt: result.retryAt,
+			cachedFallback: !!saved,
+		});
 	return saved ? JSON.parse(saved.value) : [];
 }
 export async function refreshEnrichment(db: Database, runId: string, apiKey?: string) {
@@ -43,7 +52,24 @@ export async function refreshEnrichment(db: Database, runId: string, apiKey?: st
 	for (const row of rows) {
 		await renewRun(db, runId);
 		const account = row.steamAccountId!;
+		const startedAt = Date.now();
 		const [rank, history, time] = await Promise.all([client.rank(account), client.history(account, assets), client.matchTime(account)]);
+		for (const [operation, result] of [
+			['rank', rank],
+			['history', history],
+			['matchTime', time],
+		] as const) {
+			if (result.kind === 'error')
+				console.warn('collector.enrichment.request-failed', {
+					runId,
+					twitchId: row.twitchId,
+					accountId: account,
+					operation,
+					durationMs: Date.now() - startedAt,
+					error: result.error,
+					retryAt: result.retryAt,
+				});
+		}
 		await saveEnrichment(db, runId, row, rank, history, time, Date.now());
 	}
 }
@@ -81,7 +107,7 @@ export async function saveEnrichment(
 			and(
 				eq(streamers.twitchId, row.twitchId),
 				eq(streamers.steamAccountId, row.steamAccountId!),
-					eq(streamers.steamLinkVersion, row.steamLinkVersion),
+				eq(streamers.steamLinkVersion, row.steamLinkVersion),
 				exists(
 					db
 						.select({ id: collector.id })

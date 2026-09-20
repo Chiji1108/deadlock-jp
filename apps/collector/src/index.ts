@@ -3,6 +3,7 @@ import type { StreamerRecord } from 'db';
 import { acquireRun, applyObservation, renewRun } from 'db/ingestion';
 import { TwitchClient } from './twitch';
 import { refreshEnrichment } from './enrichment';
+import { errorDetails } from './logging';
 export interface CollectorEnv {
 	DB: D1Database;
 	TWITCH_CLIENT_ID?: string;
@@ -19,6 +20,8 @@ export async function collect(env: CollectorEnv, scheduledAt: number, client?: T
 	const db = createDb(env.DB),
 		runId = crypto.randomUUID();
 	if (!(await acquireRun(db, runId, scheduledAt, Date.now()))) return;
+	const startedAt = Date.now();
+	let stage = 'load-active';
 	const ownRun = and(eq(collector.id, 1), eq(collector.runId, runId));
 	try {
 		if (!client && (!env.TWITCH_CLIENT_ID || !env.TWITCH_CLIENT_SECRET)) {
@@ -27,10 +30,13 @@ export async function collect(env: CollectorEnv, scheduledAt: number, client?: T
 		}
 		const twitch = client ?? getClient(env.TWITCH_CLIENT_ID!, env.TWITCH_CLIENT_SECRET!);
 		const active = await db.select().from(streamers).where(eq(streamers.isLive, true));
+		stage = 'twitch-discovery';
 		const game = await twitch.gameId();
 		const streams = new Map((await twitch.discover(game)).map((s) => [s.user_id, s]));
+		stage = 'twitch-verification';
 		for (const stream of await twitch.byUsers(active.filter((r) => !streams.has(r.twitchId)).map((r) => r.twitchId)))
 			streams.set(stream.user_id, stream);
+		stage = 'validate-snapshot';
 		const snapshot = new Map([...streams].filter(([, s]) => s.game_id === game && s.language === 'ja'));
 		const at = Date.now();
 		for (const s of snapshot.values())
@@ -47,6 +53,7 @@ export async function collect(env: CollectorEnv, scheduledAt: number, client?: T
 		const previous = new Map<string, StreamerRecord>(active.map((r) => [r.twitchId, r]));
 		const ids = [...snapshot.keys()],
 			portraits = new Map<string, string>();
+		stage = 'profiles';
 		for (let i = 0; i < ids.length; i += 90) {
 			await keepLease();
 			const batch = ids.slice(i, i + 90);
@@ -54,12 +61,20 @@ export async function collect(env: CollectorEnv, scheduledAt: number, client?: T
 			if (unloaded.length)
 				for (const row of await db.select().from(streamers).where(inArray(streamers.twitchId, unloaded))) previous.set(row.twitchId, row);
 			const due = batch.filter((id) => !previous.get(id)?.profileUpdatedAt || at - previous.get(id)!.profileUpdatedAt! >= 86_400_000);
+			const profileStartedAt = Date.now();
 			try {
 				for (const p of await twitch.profiles(due)) portraits.set(p.id, p.url);
-			} catch {
-				console.warn('Optional portrait refresh failed');
+			} catch (error) {
+				console.warn('collector.profiles.failed', {
+					runId,
+					stage,
+					count: due.length,
+					durationMs: Date.now() - profileStartedAt,
+					error: errorDetails(error),
+				});
 			}
 		}
+		stage = 'save-observations';
 		// Discovery and verification must both succeed before any session is closed.
 		for (const id of new Set([...active.map((r) => r.twitchId), ...snapshot.keys()])) {
 			await keepLease();
@@ -84,18 +99,27 @@ export async function collect(env: CollectorEnv, scheduledAt: number, client?: T
 				portraits.get(id),
 			);
 		}
+		stage = 'mark-ready';
 		await db
 			.update(collector)
 			.set({ state: 'ready', firstCollectedAt: sql`COALESCE(${collector.firstCollectedAt}, ${at})`, lastCollectedAt: at, error: null })
 			.where(ownRun);
+		const enrichmentStartedAt = Date.now();
+		stage = 'enrichment';
 		try {
 			await refreshEnrichment(db, runId, env.DEADLOCK_API_KEY);
-		} catch {
-			console.error('Deadlock enrichment failed; Twitch collection retained');
+		} catch (error) {
+			console.error('collector.enrichment.failed', {
+				runId,
+				stage,
+				durationMs: Date.now() - enrichmentStartedAt,
+				twitchCollectionRetained: true,
+				error: errorDetails(error),
+			});
 		}
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Collection failed';
-		console.error(message);
+		console.error('collector.failed', { runId, scheduledAt, stage, durationMs: Date.now() - startedAt, error: errorDetails(error) });
 		await db.update(collector).set({ state: 'error', error: message }).where(ownRun);
 		throw error;
 	} finally {
