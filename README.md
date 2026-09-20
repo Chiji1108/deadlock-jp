@@ -23,7 +23,7 @@ webとcollectorは同じルートの `.wrangler/state/v3` を使います。Wran
 
 `apps/collector/.dev.vars.example` を `.dev.vars` にコピーしてTwitchのClient ID / Client Secretを設定します。Deadlock APIキーは任意です。ローカルCronはcollector起動後、表示されたポートの `/__scheduled?cron=*+*+*+*+*` で実行できます。このパスはWranglerのローカル機能です。
 
-計測開始日の表示は `packages/db/src/time.ts` の2つの定数で管理しています。現在は **2026/9/20**。詳細な時刻は運用開始後に追記できます。表示日付からの遡及加算は行わず、各配信の初回観測から計測します。
+計測開始日時の表示は `packages/db/src/time.ts` の2つの定数で管理しています。本番の計測開始は **2026/9/20 20:44（日本時間）** です。表示日時からの遡及加算は行わず、各配信の初回観測から計測します。
 
 ## スキーマ変更・本番反映
 
