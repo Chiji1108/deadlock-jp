@@ -5,6 +5,21 @@
     "drizzle-orm": "^1.0.0-rc.4"
   },
   "devDependencies": {
-    "drizzle-kit": "^1.0.0-rc.4"
+    "drizzle-kit": "^1.0.0-rc.4",
+    "wrangler": "^4.135.0",
+    "typescript": "^6.0.2",
+    "@cloudflare/workers-types": "latest"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate:local": "wrangler d1 migrations apply deadlock-jp --local --config ../../apps/collector/wrangler.jsonc --persist-to ../../.wrangler/state",
+    "migrate:remote": "wrangler d1 migrations apply deadlock-jp --remote --config ../../apps/collector/wrangler.jsonc",
+    "typecheck": "tsc --noEmit",
+    "test:d1": "bun scripts/smoke.ts"
   }
 }

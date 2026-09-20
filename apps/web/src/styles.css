@@ -1,8 +1,7 @@
-
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -133,6 +132,10 @@ body {
 }
 
 @layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
   * {
     @apply border-border outline-ring/50;
   }
@@ -141,5 +144,32 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+:root {
+  --match-win: oklch(0.65 0.17 160);
+  --match-loss: oklch(0.61 0.22 25);
+}
+@theme inline {
+  --color-match-win: var(--match-win);
+  --color-match-loss: var(--match-loss);
+  --font-sans: 'Geist Variable', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+}
+@layer base {
+  body {
+    @apply antialiased;
+  }
+  button,
+  a,
+  input {
+    touch-action: manipulation;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

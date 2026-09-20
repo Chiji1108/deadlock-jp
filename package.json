@@ -1,8 +1,18 @@
 {
-	"name": "deadlock-jp",
-	"private": true,
-	"workspaces": [
-		"apps/*",
-		"packages/*"
-	]
+  "name": "deadlock-jp",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "bun test tests",
+    "typecheck": "bun run --filter db --filter web --filter collector typecheck",
+    "build": "bun run --filter web build",
+    "dev": "bun run --filter web dev",
+    "db:generate": "bun run --filter db generate",
+    "db:migrate:local": "bun run --filter db migrate:local",
+    "db:migrate:remote": "bun run --filter db migrate:remote",
+    "test:d1": "bun run --filter db test:d1"
+  }
 }

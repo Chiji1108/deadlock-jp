@@ -1,16 +1,25 @@
 {
-	"name": "collector",
-	"version": "0.0.0",
-	"private": true,
-	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --test-scheduled",
-		"start": "wrangler dev --test-scheduled",
-		"cf-typegen": "wrangler types"
-	},
-	"devDependencies": {
-		"@types/node": "^26.6.2",
-		"typescript": "^5.5.2",
-		"wrangler": "^4.135.0"
-	}
+  "name": "collector",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --test-scheduled --persist-to ../../.wrangler/state",
+    "start": "wrangler dev --test-scheduled --persist-to ../../.wrangler/state",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "api:generate": "bun run api:generate:deadlock && bun run api:generate:twitch",
+    "api:generate:deadlock": "openapi-typescript https://api.deadlock-api.com/openapi.json -o src/generated/deadlock-api.d.ts",
+    "api:generate:twitch": "openapi-typescript https://raw.githubusercontent.com/DmitryScaletta/twitch-api-swagger/main/openapi.json -o src/generated/twitch-api.d.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.5.2",
+    "wrangler": "^4.135.0"
+  },
+  "dependencies": {
+    "db": "workspace:*",
+    "openapi-fetch": "^0.17.0"
+  }
 }

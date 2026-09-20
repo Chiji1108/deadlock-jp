@@ -21,7 +21,8 @@
 			"binding": "DB",
 			"database_name": "deadlock-jp",
 			"database_id": "483c45a8-819d-4b59-bffe-ef8ad5876016",
-			"remote": true
+			"migrations_dir": "../../packages/db/migrations",
+            "migrations_pattern": "../../packages/db/migrations/*/migration.sql"
 		}
 	]
 	/**

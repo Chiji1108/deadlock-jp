@@ -1,0 +1,982 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "8f7edb5c-d8bc-492e-b873-b16dbea0a2ce",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "api_cache",
+      "entityType": "tables"
+    },
+    {
+      "name": "collector_state",
+      "entityType": "tables"
+    },
+    {
+      "name": "daily_stats",
+      "entityType": "tables"
+    },
+    {
+      "name": "hourly_stats",
+      "entityType": "tables"
+    },
+    {
+      "name": "sessions",
+      "entityType": "tables"
+    },
+    {
+      "name": "streamers",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "key",
+      "entityType": "columns",
+      "table": "api_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "value",
+      "entityType": "columns",
+      "table": "api_cache"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "table": "api_cache"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "run_id",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "lease_until",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "last_scheduled_at",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "first_collected_at",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_collected_at",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_attempt_at",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'unconfigured'",
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "error",
+      "entityType": "columns",
+      "table": "collector_state"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "twitch_id",
+      "entityType": "columns",
+      "table": "daily_stats"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "day",
+      "entityType": "columns",
+      "table": "daily_stats"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "duration_seconds",
+      "entityType": "columns",
+      "table": "daily_stats"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "viewer_seconds",
+      "entityType": "columns",
+      "table": "daily_stats"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "peak_viewers",
+      "entityType": "columns",
+      "table": "daily_stats"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "twitch_id",
+      "entityType": "columns",
+      "table": "hourly_stats"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "hour",
+      "entityType": "columns",
+      "table": "hourly_stats"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "duration_seconds",
+      "entityType": "columns",
+      "table": "hourly_stats"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "twitch_id",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "twitch_stream_id",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "title",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "started_at",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ended_at",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "duration_seconds",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "viewer_seconds",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "peak_viewers",
+      "entityType": "columns",
+      "table": "sessions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "twitch_id",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "login",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "display_name",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "profile_image_url",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "profile_updated_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "first_seen_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "last_observed_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "is_live",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "twitch_stream_id",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_seen_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "live_started_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "live_viewer_count",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "title",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "thumbnail_url",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "duration_seconds",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "real",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "viewer_seconds",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "peak_viewers",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "real",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": {
+        "as": "(CASE WHEN duration_seconds > 0 THEN viewer_seconds / duration_seconds ELSE 0 END)",
+        "type": "virtual"
+      },
+      "name": "average_viewers",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "steam_account_id",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "rank_tier",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "rank_subrank",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "rank_updated_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "rank_unavailable",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": {
+        "as": "(CASE WHEN rank_tier > 0 THEN rank_tier * 10 + rank_subrank WHEN rank_tier = 0 THEN 0 ELSE -1 END)",
+        "type": "virtual"
+      },
+      "name": "rank_score",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": {
+        "as": "(CASE WHEN rank_tier > 0 THEN 200 - rank_tier * 10 - rank_subrank WHEN rank_tier = 0 THEN 0 ELSE -1 END)",
+        "type": "virtual"
+      },
+      "name": "rank_asc_score",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "match_time_seconds",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "match_time_updated_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'[]'",
+      "generated": null,
+      "name": "recent_matches",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "history_updated_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "enrichment_due_at",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "enrichment_failures",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "enrichment_error",
+      "entityType": "columns",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        "twitch_id"
+      ],
+      "tableTo": "streamers",
+      "columnsTo": [
+        "twitch_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_daily_stats_twitch_id_streamers_twitch_id_fk",
+      "entityType": "fks",
+      "table": "daily_stats"
+    },
+    {
+      "columns": [
+        "twitch_id"
+      ],
+      "tableTo": "streamers",
+      "columnsTo": [
+        "twitch_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_hourly_stats_twitch_id_streamers_twitch_id_fk",
+      "entityType": "fks",
+      "table": "hourly_stats"
+    },
+    {
+      "columns": [
+        "twitch_id"
+      ],
+      "tableTo": "streamers",
+      "columnsTo": [
+        "twitch_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_sessions_twitch_id_streamers_twitch_id_fk",
+      "entityType": "fks",
+      "table": "sessions"
+    },
+    {
+      "columns": [
+        "twitch_id",
+        "day"
+      ],
+      "nameExplicit": false,
+      "name": "daily_stats_pk",
+      "entityType": "pks",
+      "table": "daily_stats"
+    },
+    {
+      "columns": [
+        "twitch_id",
+        "hour"
+      ],
+      "nameExplicit": false,
+      "name": "hourly_stats_pk",
+      "entityType": "pks",
+      "table": "hourly_stats"
+    },
+    {
+      "columns": [
+        "key"
+      ],
+      "nameExplicit": false,
+      "name": "api_cache_pk",
+      "table": "api_cache",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "collector_state_pk",
+      "table": "collector_state",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "sessions_pk",
+      "table": "sessions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "twitch_id"
+      ],
+      "nameExplicit": false,
+      "name": "streamers_pk",
+      "table": "streamers",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        },
+        {
+          "value": "\"started_at\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "sessions_recent",
+      "entityType": "indexes",
+      "table": "sessions"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"is_live\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "\"viewer_seconds\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_live",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"duration_seconds\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_duration_seconds",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"viewer_seconds\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_viewer_seconds",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"average_viewers\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_average_viewers",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"peak_viewers\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_peak_viewers",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"rank_score\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_rank_score",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"rank_asc_score\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_rank_asc_score",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "\"match_time_seconds\" desc",
+          "isExpression": true
+        },
+        {
+          "value": "twitch_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"first_seen_at\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_match_time_seconds",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        {
+          "value": "enrichment_due_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"streamers\".\"steam_account_id\" IS NOT NULL",
+      "origin": "manual",
+      "name": "streamers_enrichment",
+      "entityType": "indexes",
+      "table": "streamers"
+    },
+    {
+      "columns": [
+        "steam_account_id"
+      ],
+      "nameExplicit": false,
+      "name": "streamers_steam_account_id_unique",
+      "entityType": "uniques",
+      "table": "streamers"
+    },
+    {
+      "value": "\"id\" = 1",
+      "name": "collector_singleton",
+      "entityType": "checks",
+      "table": "collector_state"
+    },
+    {
+      "value": "\"duration_seconds\" >= 0 AND \"viewer_seconds\" >= 0 AND \"peak_viewers\" >= 0",
+      "name": "positive_metrics",
+      "entityType": "checks",
+      "table": "streamers"
+    },
+    {
+      "value": "\"steam_account_id\" > 0 AND \"steam_account_id\" <= 4294967295",
+      "name": "steam_account_range",
+      "entityType": "checks",
+      "table": "streamers"
+    },
+    {
+      "value": "(\"rank_tier\" IS NULL AND \"rank_subrank\" IS NULL) OR (\"rank_tier\" = 0 AND \"rank_subrank\" = 0) OR (\"rank_tier\" BETWEEN 1 AND 11 AND \"rank_subrank\" BETWEEN 1 AND 6)",
+      "name": "rank_range",
+      "entityType": "checks",
+      "table": "streamers"
+    }
+  ],
+  "renames": []
+}
