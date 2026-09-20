@@ -1,0 +1,8 @@
+{
+	"name": "deadlock-jp",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	]
+}
