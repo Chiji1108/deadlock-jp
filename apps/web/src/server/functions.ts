@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { parseFilters } from 'db/types'
+import { parseFilters, parsePeriod } from 'db/types'
 
 export const fetchBoard = createServerFn({ method: 'GET' })
   .validator(parseFilters)
@@ -8,14 +8,14 @@ export const fetchBoard = createServerFn({ method: 'GET' })
     return loadBoard(data)
   })
 export const fetchDetail = createServerFn({ method: 'GET' })
-  .validator((id: string) => {
-    if (typeof id !== 'string' || !/^\d{1,30}$/.test(id))
+  .validator((input: { id: string; period?: unknown }) => {
+    if (typeof input.id !== 'string' || !/^\d{1,30}$/.test(input.id))
       throw new Error('Invalid Twitch ID')
-    return id
+    return { id: input.id, period: parsePeriod(input.period) }
   })
   .handler(async ({ data }) => {
     const { loadDetail } = await import('./data.server')
-    return loadDetail(data)
+    return loadDetail(data.id, data.period)
   })
 export const fetchStatus = createServerFn({ method: 'GET' }).handler(
   async () => {

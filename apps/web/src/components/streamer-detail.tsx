@@ -1,6 +1,8 @@
 import { getRouteApi, Link } from '@tanstack/react-router'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
-import type { StreamerData } from 'db/types'
+import type { StreamerData, Period } from 'db/types'
+import { periodLabels } from 'db/periods'
+import { PeriodPicker } from './period-picker'
 import { measurementStartLabel } from 'db/time'
 import { SteamLinkDialog } from './steam-link-dialog'
 import { DeadlockRank } from './deadlock-rank'
@@ -16,7 +18,9 @@ export function StreamerDetailView({
   data,
   fresh,
   measurementStartedAt,
+  onPeriodChange,
 }: {
+  onPeriodChange: (period: Period) => void
   data: StreamerData
   measurementStartedAt: number
   fresh: boolean
@@ -29,7 +33,15 @@ export function StreamerDetailView({
         <Button
           nativeButton={false}
           render={
-            <Link to="/" search={{ sort: 'live', live: false, page: 1 }} />
+            <Link
+              to="/"
+              search={{
+                sort: 'live',
+                live: false,
+                page: 1,
+                period: data.period,
+              }}
+            />
           }
           variant="ghost"
           size="sm"
@@ -82,15 +94,25 @@ export function StreamerDetailView({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 id="summary-title" className="text-base font-semibold">
-              累計
+              {data.period === 'all'
+                ? '累計'
+                : `${periodLabels[data.period]}の集計`}
             </h2>
             <span className="text-xs text-muted-foreground">
               配信日数 {number(summary.streamingDays)}日
             </span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {measurementStartLabel(measurementStartedAt)} 計測開始
-          </span>
+          <PeriodPicker
+            period={data.period}
+            startedAt={measurementStartedAt}
+            observedAt={data.lastCollectedAt}
+            onChange={onPeriodChange}
+          />
+          {data.period === 'all' && (
+            <span className="text-xs text-muted-foreground">
+              {measurementStartLabel(measurementStartedAt)} 計測開始
+            </span>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Metric

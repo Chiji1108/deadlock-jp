@@ -67,7 +67,7 @@ function AdminLogin() {
             <p className="text-sm text-muted-foreground">{admin.email}</p>
             <Link
               to="/"
-              search={{ sort: 'live', live: false, page: 1 }}
+              search={{ sort: 'live', live: false, page: 1, period: 'all' }}
               className={buttonVariants()}
             >
               配信者一覧へ

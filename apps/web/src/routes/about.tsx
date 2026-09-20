@@ -16,7 +16,12 @@ function About() {
     <article className="mx-auto flex w-full max-w-2xl flex-col gap-6 text-sm leading-7 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_p]:text-muted-foreground">
       <Button
         nativeButton={false}
-        render={<Link to="/" search={{ sort: 'live', live: false, page: 1 }} />}
+        render={
+          <Link
+            to="/"
+            search={{ sort: 'live', live: false, page: 1, period: 'all' }}
+          />
+        }
         variant="ghost"
         size="sm"
         className="w-fit"

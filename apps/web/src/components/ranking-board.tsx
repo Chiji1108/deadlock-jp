@@ -6,6 +6,7 @@ import { measurementStartLabel } from 'db/time'
 import type { getRanking } from 'db/queries'
 import { DataTable } from './data-table'
 import type { DataTableFeatures } from './data-table'
+import { PeriodPicker } from './period-picker'
 import { Avatar, CollectionNotice, LiveBadge, number } from './dashboard-ui'
 import { DeadlockRank } from './deadlock-rank'
 import { DeadlockMatchTime } from './deadlock-activity'
@@ -79,6 +80,7 @@ export function RankingBoard({
               className="max-w-52 truncate font-medium hover:underline"
               to="/streamers/$id"
               params={{ id: row.original.twitchId }}
+              search={{ period: filters.period }}
             >
               {row.original.displayName}
             </Link>
@@ -123,9 +125,17 @@ export function RankingBoard({
     <>
       <h1 className="sr-only">Deadlock 日本語Twitch配信者ボード</h1>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <span className="text-xs text-muted-foreground">
-          {measurementStartLabel(status.measurementStartedAt)} 計測開始
-        </span>
+        <PeriodPicker
+          period={filters.period}
+          startedAt={status.measurementStartedAt}
+          observedAt={status.lastCollectedAt}
+          onChange={(period) => onChange({ ...filters, period, page: 1 })}
+        />
+        {filters.period === 'all' && (
+          <span className="text-xs text-muted-foreground">
+            {measurementStartLabel(status.measurementStartedAt)} 計測開始
+          </span>
+        )}
         <FieldGroup className="ml-auto w-32 shrink-0">
           <Field orientation="horizontal">
             <Switch
@@ -167,7 +177,7 @@ export function RankingBoard({
                 return
               if (event.metaKey || event.ctrlKey)
                 window.open(
-                  `/streamers/${row.twitchId}`,
+                  `/streamers/${row.twitchId}?period=${filters.period}`,
                   '_blank',
                   'noopener,noreferrer',
                 )
@@ -175,6 +185,7 @@ export function RankingBoard({
                 void navigate({
                   to: '/streamers/$id',
                   params: { id: row.twitchId },
+                  search: { period: filters.period },
                 })
             }}
           />

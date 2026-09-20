@@ -37,7 +37,10 @@ export const Route = createRootRoute({
   notFoundComponent: () => (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold">ページが見つかりません</h1>
-      <Link to="/" search={{ sort: 'live', live: false, page: 1 }}>
+      <Link
+        to="/"
+        search={{ sort: 'live', live: false, page: 1, period: 'all' }}
+      >
         配信者一覧へ
       </Link>
     </div>
@@ -66,7 +69,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <header className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
             <Link
               to="/"
-              search={{ sort: 'live', live: false, page: 1 }}
+              search={{ sort: 'live', live: false, page: 1, period: 'all' }}
               className="text-sm font-semibold tracking-tight"
             >
               Deadlock 日本語Twitch配信者ボード

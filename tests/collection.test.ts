@@ -231,7 +231,7 @@ describe("public server queries", () => {
     ).toEqual(["3", "1", "2", "4"]);
     expect(
       parseFilters({ sort: "DROP TABLE", page: "-1", live: "false" }),
-    ).toEqual({ sort: "live", page: 1, live: false });
+    ).toEqual({ sort: "live", page: 1, live: false, period: "all" });
     expect((await getRanking(db, parseFilters({ page: 10000 }), at)).page).toBe(
       1,
     );

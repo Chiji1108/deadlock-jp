@@ -1,11 +1,11 @@
 import {
+  getTableColumns,
   and,
   asc,
   count,
   desc,
   eq,
   gte,
-  gt,
   isNotNull,
   lte,
   sql,
@@ -21,6 +21,8 @@ import {
   dayStart,
   heatIndex,
 } from "./time";
+import { periodStart, resolvePeriod } from "./periods";
+import type { Period } from "./types";
 import { parseFilters } from "./types";
 import type {
   Activity,
@@ -122,6 +124,11 @@ export async function getRanking(
 ) {
   const filters = parseFilters(input),
     status = await getStatus(db, now);
+  filters.period = resolvePeriod(
+    filters.period,
+    status.measurementStartedAt,
+    status.lastCollectedAt,
+  );
   const where = and(
     isNotNull(s.firstSeenAt),
     filters.live ? (status.fresh ? eq(s.isLive, true) : sql`0`) : undefined,
@@ -131,17 +138,68 @@ export async function getRanking(
     0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE)),
     page = Math.min(filters.page, pageCount);
+  const window =
+    filters.period === "all"
+      ? null
+      : db
+          .select({
+            twitchId: daily.twitchId,
+            durationSeconds: sql<number>`sum(${daily.durationSeconds})`.as(
+              "period_duration",
+            ),
+            viewerSeconds: sql<number>`sum(${daily.viewerSeconds})`.as(
+              "period_viewers",
+            ),
+            peakViewers: sql<number>`max(${daily.peakViewers})`.as(
+              "period_peak",
+            ),
+          })
+          .from(daily)
+          .where(
+            and(
+              gte(
+                daily.day,
+                periodStart(filters.period, status.lastCollectedAt!),
+              ),
+              lte(daily.day, dayStart(status.lastCollectedAt!)),
+            ),
+          )
+          .groupBy(daily.twitchId)
+          .as("period_stats");
+  const duration = window
+    ? sql<number>`coalesce(${window.durationSeconds}, 0)`
+    : s.durationSeconds;
+  const watched = window
+    ? sql<number>`coalesce(${window.viewerSeconds}, 0)`
+    : s.viewerSeconds;
+  const peak = window
+    ? sql<number>`coalesce(${window.peakViewers}, 0)`
+    : s.peakViewers;
+  const average = window
+    ? sql<number>`case when ${duration} > 0 then 1.0 * ${watched} / ${duration} else 0 end`
+    : s.averageViewers;
+  const columns = { ...sortColumns, duration, watched, peak, viewers: average };
   const order =
     filters.sort === "live"
       ? [
           ...(status.fresh ? [desc(s.isLive)] : []),
-          desc(s.viewerSeconds),
+          desc(watched),
           asc(s.twitchId),
         ]
-      : [desc(sortColumns[filters.sort]), asc(s.twitchId)];
-  const rows = await db
-    .select()
+      : [desc(columns[filters.sort]), asc(s.twitchId)];
+  const query = db
+    .select({
+      ...getTableColumns(s),
+      durationSeconds: duration,
+      viewerSeconds: watched,
+      peakViewers: peak,
+      averageViewers: average,
+    })
     .from(s)
+    .$dynamic();
+  const rows = await (
+    window ? query.leftJoin(window, eq(s.twitchId, window.twitchId)) : query
+  )
     .where(where)
     .orderBy(...order)
     .limit(PAGE_SIZE)
@@ -159,6 +217,7 @@ export async function getDetail(
   db: Database,
   twitchId: string,
   now = Date.now(),
+  requestedPeriod: Period = "all",
 ): Promise<{ data: StreamerData; status: Status } | null> {
   if (!/^\d{1,30}$/.test(twitchId)) return null;
   const row = await db
@@ -169,12 +228,30 @@ export async function getDetail(
   if (!row) return null;
   const status = await getStatus(db, now),
     at = Math.max(row.lastObservedAt, status.lastCollectedAt ?? 0);
+  const period = resolvePeriod(
+    requestedPeriod,
+    status.measurementStartedAt,
+    status.lastCollectedAt,
+  );
+  const from =
+    period === "all" ? undefined : periodStart(period, status.lastCollectedAt!);
   const start = Math.max(dayStart(at) - 89 * DAY, row.firstSeenAt!);
   const [days, hours, recent] = await db.batch([
     db
-      .select({ days: count() })
+      .select({
+        days: sql<number>`sum(case when ${daily.durationSeconds} > 0 then 1 else 0 end)`,
+        durationSeconds: sql<number>`coalesce(sum(${daily.durationSeconds}), 0)`,
+        viewerSeconds: sql<number>`coalesce(sum(${daily.viewerSeconds}), 0)`,
+        peakViewers: sql<number>`coalesce(max(${daily.peakViewers}), 0)`,
+      })
       .from(daily)
-      .where(and(eq(daily.twitchId, twitchId), gt(daily.durationSeconds, 0))),
+      .where(
+        and(
+          eq(daily.twitchId, twitchId),
+          from === undefined ? undefined : gte(daily.day, from),
+          lte(daily.day, dayStart(at)),
+        ),
+      ),
     db
       .select()
       .from(hourly)
@@ -212,6 +289,7 @@ export async function getDetail(
   return {
     status,
     data: {
+      period,
       streamer: {
         twitchId,
         login: row.login,
@@ -229,7 +307,10 @@ export async function getDetail(
             thumbnailUrl: row.thumbnailUrl,
           }
         : null,
-      summary: { ...metrics(row), streamingDays: days[0]?.days ?? 0 },
+      summary: {
+        ...metrics(period === "all" ? row : days[0]!),
+        streamingDays: days[0]?.days ?? 0,
+      },
       heatmap,
       heatmapDays: Math.max(
         1,
