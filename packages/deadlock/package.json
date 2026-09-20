@@ -2,10 +2,16 @@
   "name": "deadlock",
   "private": true,
   "type": "module",
+  "scripts": {
+    "api:generate": "openapi-typescript https://api.deadlock-api.com/openapi.json -o src/api.d.ts"
+  },
   "exports": {
     ".": "./src/client.ts",
     "./model": "./src/model.ts",
     "./api": "./src/api.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
   },
   "dependencies": {
     "db": "workspace:*",

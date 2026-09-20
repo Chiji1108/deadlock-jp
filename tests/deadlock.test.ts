@@ -3,7 +3,7 @@ import {
   parseHistory,
   parseMatchTime,
   parseRank,
-} from "../apps/collector/src/deadlock-model";
+} from "deadlock/model";
 const raw = (id: number, overrides = {}) => ({
   account_id: 123,
   match_id: id,

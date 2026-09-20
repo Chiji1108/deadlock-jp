@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "deadlock-jp",
+      "devDependencies": {
+        "deadlock": "workspace:*",
+      },
     },
     "apps/collector": {
       "name": "collector",
@@ -87,6 +90,9 @@
       "dependencies": {
         "db": "workspace:*",
         "openapi-fetch": "^0.17.0",
+      },
+      "devDependencies": {
+        "openapi-typescript": "^7.13.0",
       },
     },
   },

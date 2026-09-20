@@ -5,6 +5,9 @@
     "apps/*",
     "packages/*"
   ],
+  "devDependencies": {
+    "deadlock": "workspace:*"
+  },
   "scripts": {
     "test": "bun test tests",
     "typecheck": "bun run --filter db --filter web --filter collector typecheck",

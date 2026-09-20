@@ -1,4 +1,4 @@
-import { createDeadlockClient } from "../apps/collector/src/deadlock-client";
+import { createDeadlockClient } from "deadlock";
 import { describe, expect, test } from "bun:test";
 import {
   collector,

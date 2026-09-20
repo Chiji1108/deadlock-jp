@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createDeadlockClient } from "../apps/collector/src/deadlock-client";
+import { createDeadlockClient } from "deadlock";
 
 test("typed client sends all four endpoints, credentials and query parameters", async () => {
   const requests: Request[] = [];

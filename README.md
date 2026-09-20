@@ -78,7 +78,7 @@ bun run typecheck
 bun test tests
 ```
 
-API仕様を更新する際はこの手順で両方を再生成し、生成差分を確認します。個別更新は `api:generate:deadlock` / `api:generate:twitch` です。パス・パラメータ・レスポンスは生成型を使い、受信JSONの異常値チェックとタイムアウト・HTTPエラー処理は `deadlock-client.ts` / `deadlock-model.ts` / `twitch.ts` に残しています。
+API仕様を更新する際はこの手順で両方を再生成し、生成差分を確認します。個別更新は `bun run --filter deadlock api:generate` / `bun run --filter collector api:generate:twitch` です。collector の `api:generate:deadlock` は deadlock パッケージの生成コマンドを呼び出します。パス・パラメータ・レスポンスは生成型を使い、受信JSONの異常値チェックとタイムアウト・HTTPエラー処理は `packages/deadlock/src/client.ts` / `packages/deadlock/src/model.ts` / `apps/collector/src/twitch.ts` で行っています。
 
 ## 管理者ログイン
 

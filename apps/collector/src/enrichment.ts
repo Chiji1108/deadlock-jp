@@ -1,10 +1,10 @@
 import { and, asc, cache, collector, eq, exists, isNotNull, lte, sql, streamers } from 'db';
 import type { Database, StreamerRecord } from 'db';
 import { renewRun } from 'db/ingestion';
-import type { parseHistory, parseRank } from './deadlock-model';
-import type { HeroAsset } from './deadlock-model';
-import { createDeadlockClient } from './deadlock-client';
-import type { Result } from './deadlock-client';
+import type { parseHistory, parseRank } from 'deadlock/model';
+import type { HeroAsset } from 'deadlock/model';
+import { createDeadlockClient } from 'deadlock';
+import type { Result } from 'deadlock';
 async function heroes(db: Database, runId: string, client: ReturnType<typeof createDeadlockClient>): Promise<HeroAsset[]> {
 	const saved = await db.select().from(cache).where(eq(cache.key, 'heroes')).get();
 	if (saved && saved.expiresAt > Date.now()) return JSON.parse(saved.value);
