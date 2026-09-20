@@ -1,5 +1,4 @@
 import {
-  getTableColumns,
   and,
   asc,
   count,
@@ -54,6 +53,26 @@ export function metrics(row: {
     peakViewers: row.peakViewers,
   };
 }
+function rankData(
+  row: Pick<
+    StreamerRecord,
+    | "steamAccountId"
+    | "rankTier"
+    | "rankSubrank"
+    | "rankUpdatedAt"
+    | "rankUnavailable"
+  >,
+) {
+  return row.steamAccountId === null
+    ? null
+    : {
+        accountId: row.steamAccountId,
+        tier: row.rankTier,
+        subrank: row.rankSubrank,
+        updatedAt: row.rankUpdatedAt,
+        unavailable: row.rankUnavailable,
+      };
+}
 function gameData(row: StreamerRecord) {
   const activity: Activity | null =
     row.steamAccountId === null
@@ -73,16 +92,7 @@ function gameData(row: StreamerRecord) {
                   : "waiting",
         };
   return {
-    deadlockRank:
-      row.steamAccountId === null
-        ? null
-        : {
-            accountId: row.steamAccountId,
-            tier: row.rankTier,
-            subrank: row.rankSubrank,
-            updatedAt: row.rankUpdatedAt,
-            unavailable: row.rankUnavailable,
-          },
+    deadlockRank: rankData(row),
     deadlockActivity: activity,
   };
 }
@@ -104,7 +114,27 @@ export async function getStatus(
     fresh: row?.lastCollectedAt != null && now - row.lastCollectedAt <= MAX_GAP,
   };
 }
-export function toRankingRow(row: StreamerRecord, fresh: boolean): RankingRow {
+const rankingColumns = {
+  twitchId: s.twitchId,
+  login: s.login,
+  displayName: s.displayName,
+  profileImageUrl: s.profileImageUrl,
+  isLive: s.isLive,
+  liveViewerCount: s.liveViewerCount,
+  liveStartedAt: s.liveStartedAt,
+  durationSeconds: s.durationSeconds,
+  viewerSeconds: s.viewerSeconds,
+  peakViewers: s.peakViewers,
+  steamAccountId: s.steamAccountId,
+  rankTier: s.rankTier,
+  rankSubrank: s.rankSubrank,
+  rankUpdatedAt: s.rankUpdatedAt,
+  rankUnavailable: s.rankUnavailable,
+  matchTimeSeconds: s.matchTimeSeconds,
+  matchTimeUpdatedAt: s.matchTimeUpdatedAt,
+};
+type RankingRecord = Pick<StreamerRecord, keyof typeof rankingColumns>;
+export function toRankingRow(row: RankingRecord, fresh: boolean): RankingRow {
   return {
     twitchId: row.twitchId,
     login: row.login,
@@ -114,7 +144,14 @@ export function toRankingRow(row: StreamerRecord, fresh: boolean): RankingRow {
     liveViewerCount: row.liveViewerCount,
     liveStartedAt: row.liveStartedAt,
     ...metrics(row),
-    ...gameData(row),
+    deadlockRank: rankData(row),
+    deadlockActivity:
+      row.steamAccountId === null
+        ? null
+        : {
+            matchTimeSeconds: row.matchTimeSeconds,
+            matchTimeUpdatedAt: row.matchTimeUpdatedAt,
+          },
   };
 }
 export async function getRanking(
@@ -189,7 +226,7 @@ export async function getRanking(
       : [desc(columns[filters.sort]), asc(s.twitchId)];
   const query = db
     .select({
-      ...getTableColumns(s),
+      ...rankingColumns,
       durationSeconds: duration,
       viewerSeconds: watched,
       peakViewers: peak,

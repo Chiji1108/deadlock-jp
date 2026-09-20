@@ -13,11 +13,13 @@ export interface Rank {
   unavailable: boolean;
   updatedAt: number | null;
 }
-export interface Activity {
-  recentMatches: RecentMatch[];
-  historyUpdatedAt: number | null;
+export interface MatchTime {
   matchTimeSeconds: number | null;
   matchTimeUpdatedAt: number | null;
+}
+export interface Activity extends MatchTime {
+  recentMatches: RecentMatch[];
+  historyUpdatedAt: number | null;
   status: "pending" | "waiting" | "ready" | "unavailable";
 }
 export interface Metrics {
@@ -35,7 +37,7 @@ export interface RankingRow extends Metrics {
   liveViewerCount: number | null;
   liveStartedAt: number | null;
   deadlockRank: Rank | null;
-  deadlockActivity: Activity | null;
+  deadlockActivity: MatchTime | null;
 }
 export interface Status {
   measurementStartedAt: number;

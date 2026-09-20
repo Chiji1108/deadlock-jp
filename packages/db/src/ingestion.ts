@@ -3,17 +3,9 @@ import type { BatchItem } from "drizzle-orm/batch";
 import type { Database } from "./index";
 import { collector, daily, hourly, sessions, streamers } from "./schema";
 import type { StreamerRecord } from "./schema";
-import { dayStart, MAX_GAP, splitHours } from "./time";
-export interface Observation {
-  twitchId: string;
-  twitchStreamId: string;
-  login: string;
-  displayName: string;
-  title: string;
-  viewerCount: number;
-  startedAt: number;
-  thumbnailUrl: string | null;
-}
+export type { Observation } from "./observation";
+import { planObservation } from "./observation";
+import type { Observation } from "./observation";
 export async function acquireRun(
   db: Database,
   runId: string,
@@ -66,8 +58,19 @@ export async function applyObservation(
   at: number,
   portrait?: string,
 ) {
-  const id = live?.twitchId ?? old?.twitchId;
-  if (!id || (old && old.lastObservedAt >= at)) return;
+  const plan = planObservation(old, live, at);
+  if (!plan) return;
+  const {
+    id,
+    hadSession,
+    continued,
+    end,
+    seconds,
+    viewerSeconds,
+    buckets,
+    hours,
+    sessionId,
+  } = plan;
   const owner = exists(
     db
       .select({ id: collector.id })
@@ -100,19 +103,6 @@ export async function applyObservation(
     ),
   )!;
   const statements: BatchItem<"sqlite">[] = [];
-  const hadSession = !!old?.sessionId && old.isLive;
-  const gap = at - (old?.lastSeenAt ?? at);
-  const continued =
-    hadSession &&
-    live?.twitchStreamId === old!.twitchStreamId &&
-    gap <= MAX_GAP;
-  const end = hadSession && gap <= MAX_GAP ? at : (old?.lastSeenAt ?? at);
-  const seconds = hadSession ? Math.max(0, end - old!.lastSeenAt!) / 1000 : 0,
-    viewerSeconds = seconds * (old?.liveViewerCount ?? 0);
-  const buckets = new Map<
-    number,
-    { durationSeconds: number; viewerSeconds: number; peakViewers: number }
-  >();
   if (hadSession) {
     statements.push(
       db
@@ -126,16 +116,7 @@ export async function applyObservation(
         })
         .where(and(eq(sessions.id, old!.sessionId!), guard)),
     );
-    for (const part of splitHours(old!.lastSeenAt!, end)) {
-      const bucket = buckets.get(part.day) ?? {
-        durationSeconds: 0,
-        viewerSeconds: 0,
-        peakViewers: 0,
-      };
-      bucket.durationSeconds += part.seconds;
-      bucket.viewerSeconds += part.seconds * old!.liveViewerCount!;
-      bucket.peakViewers = Math.max(bucket.peakViewers, old!.liveViewerCount!);
-      buckets.set(part.day, bucket);
+    for (const part of hours) {
       statements.push(
         db
           .insert(hourly)
@@ -160,15 +141,7 @@ export async function applyObservation(
       );
     }
   }
-  const sessionId = live ? (continued ? old!.sessionId! : `${id}:${at}`) : null;
   if (live) {
-    const day = buckets.get(dayStart(at)) ?? {
-      durationSeconds: 0,
-      viewerSeconds: 0,
-      peakViewers: 0,
-    };
-    day.peakViewers = Math.max(day.peakViewers, live.viewerCount);
-    buckets.set(dayStart(at), day);
     if (!continued)
       statements.push(
         db.insert(sessions).select(

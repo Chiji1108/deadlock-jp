@@ -1,7 +1,4 @@
-import { useRef, useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
-import type { SteamCandidate } from '@/server/steam-admin'
-import { steamAction } from '@/server/steam.functions'
+import { useSteamLink } from '@/hooks/use-steam-link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field'
@@ -27,11 +24,6 @@ import { Spinner } from '@/components/ui/spinner'
 import { DeadlockRank } from './deadlock-rank'
 import { Avatar } from './dashboard-ui'
 
-type Reply = Awaited<ReturnType<typeof steamAction>>
-type Preview = Extract<
-  Extract<Reply, { ok: true }>['result'],
-  { kind: 'preview' | 'unlink-preview' }
->
 const profileUrl = (id: number) =>
   `https://steamcommunity.com/profiles/${BigInt(id) + 76561197960265728n}`
 const methods = {
@@ -49,77 +41,26 @@ export function SteamLinkDialog({
   twitchId: string
   linked: boolean
 }) {
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [method, setMethod] = useState<keyof typeof methods>('search')
-  const [value, setValue] = useState('')
-  const [candidates, setCandidates] = useState<SteamCandidate[] | null>(null)
-  const [preview, setPreview] = useState<Preview | null>(null)
-  const [selected, setSelected] = useState<SteamCandidate | null>(null)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
-  const [busy, setBusy] = useState(false)
-  const working = useRef(false)
-  async function request(
-    action: 'search' | 'match' | 'preview' | 'unlink-preview' | 'save',
-    input: string,
-    candidate?: SteamCandidate,
-  ) {
-    if (working.current) return
-    working.current = true
-    setBusy(true)
-    setError('')
-    try {
-      const reply = await steamAction({
-        data: { action, twitchId, value: input },
-      })
-      if (!reply.ok) {
-        setError(reply.message)
-        return
-      }
-      const result = reply.result
-      if (result.kind === 'candidates') setCandidates(result.candidates)
-      if (result.kind === 'preview' || result.kind === 'unlink-preview') {
-        setSelected(candidate ?? null)
-        setPreview(result)
-        setOpen(false)
-      }
-      if (result.kind === 'saved') {
-        setPreview(null)
-        setOpen(false)
-        setNotice(
-          preview?.kind === 'unlink-preview'
-            ? 'Steamアカウントの紐付けを解除しました。'
-            : 'Steamアカウントを紐付けました。',
-        )
-        try {
-          await router.invalidate({ sync: true })
-        } catch {
-          setNotice('保存しました。画面を再読み込みしてください。')
-        }
-      }
-    } catch {
-      setError('通信に失敗しました。再試行してください。')
-    } finally {
-      working.current = false
-      setBusy(false)
-    }
-  }
+  const {
+    open,
+    method,
+    value,
+    candidates,
+    preview,
+    selected,
+    error,
+    notice,
+    busy,
+    request,
+    setOpen,
+    setMethod,
+    setValue,
+    back,
+    search,
+  } = useSteamLink(twitchId)
   return (
     <>
-      <Dialog
-        open={open}
-        onOpenChange={(next) => {
-          if (working.current || preview) return
-          setOpen(next)
-          if (next) {
-            setError('')
-            setNotice('')
-            setCandidates(null)
-            setValue('')
-          }
-        }}
-      >
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger render={<Button variant="outline" size="sm" />}>
           {linked ? 'Steam紐付けを変更' : 'Steamを紐付ける'}
         </DialogTrigger>
@@ -135,13 +76,7 @@ export function SteamLinkDialog({
           </DialogHeader>
           <Tabs
             value={method}
-            onValueChange={(next) => {
-              if (working.current) return
-              setMethod(next as keyof typeof methods)
-              setValue('')
-              setCandidates(null)
-              setError('')
-            }}
+            onValueChange={(next) => setMethod(next as keyof typeof methods)}
           >
             <TabsList className="w-full">
               {Object.entries(methods).map(([key, item]) => (
@@ -155,8 +90,7 @@ export function SteamLinkDialog({
                 className="flex flex-col gap-3"
                 onSubmit={(event) => {
                   event.preventDefault()
-                  setCandidates(null)
-                  void request(method === 'direct' ? 'preview' : method, value)
+                  void search()
                 }}
               >
                 <Field>
@@ -249,11 +183,7 @@ export function SteamLinkDialog({
       <AlertDialog
         open={!!preview}
         onOpenChange={(next) => {
-          if (!next && !working.current) {
-            setPreview(null)
-            setOpen(true)
-            setError('')
-          }
+          if (!next) back()
         }}
       >
         <AlertDialogContent>
@@ -328,15 +258,7 @@ export function SteamLinkDialog({
             </Alert>
           )}
           <AlertDialogFooter>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => {
-                setPreview(null)
-                setOpen(true)
-                setError('')
-              }}
-            >
+            <Button variant="outline" disabled={busy} onClick={back}>
               戻る
             </Button>
             <Button

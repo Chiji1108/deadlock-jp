@@ -9,9 +9,8 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { dateTime, number } from './dashboard-ui'
-import type { RankingRow } from 'db/types'
+import type { Activity, MatchTime } from 'db/types'
 
-type Activity = NonNullable<RankingRow['deadlockActivity']>
 const outcomes = { win: '勝利', loss: '敗北', unknown: '判定なし' }
 
 // Hover/focus on desktop, tap on touch. Prevent the containing row's navigation.
@@ -109,7 +108,7 @@ export function DeadlockMatchTime({
   activity,
   plain = false,
 }: {
-  activity: RankingRow['deadlockActivity']
+  activity: MatchTime | null
   plain?: boolean
 }) {
   if (!activity || activity.matchTimeSeconds === null)
@@ -141,11 +140,7 @@ export function DeadlockMatchTime({
   )
 }
 
-export function DeadlockActivity({
-  activity,
-}: {
-  activity: RankingRow['deadlockActivity']
-}) {
+export function DeadlockActivity({ activity }: { activity: Activity | null }) {
   if (!activity) return null
   const matches = activity.recentMatches.slice(0, 20)
   return (
