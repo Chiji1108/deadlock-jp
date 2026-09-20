@@ -1,0 +1,14 @@
+{
+  "name": "deadlock",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/client.ts",
+    "./model": "./src/model.ts",
+    "./api": "./src/api.d.ts"
+  },
+  "dependencies": {
+    "db": "workspace:*",
+    "openapi-fetch": "^0.17.0"
+  }
+}

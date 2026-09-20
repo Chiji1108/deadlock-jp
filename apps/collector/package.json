@@ -9,7 +9,7 @@
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
     "api:generate": "bun run api:generate:deadlock && bun run api:generate:twitch",
-    "api:generate:deadlock": "openapi-typescript https://api.deadlock-api.com/openapi.json -o src/generated/deadlock-api.d.ts",
+    "api:generate:deadlock": "openapi-typescript https://api.deadlock-api.com/openapi.json -o ../../packages/deadlock/src/api.d.ts",
     "api:generate:twitch": "openapi-typescript https://raw.githubusercontent.com/DmitryScaletta/twitch-api-swagger/main/openapi.json -o src/generated/twitch-api.d.ts"
   },
   "devDependencies": {
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "db": "workspace:*",
-    "openapi-fetch": "^0.17.0"
+    "openapi-fetch": "^0.17.0",
+    "deadlock": "workspace:*"
   }
 }

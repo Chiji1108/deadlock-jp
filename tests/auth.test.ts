@@ -94,3 +94,21 @@ test('measurement reset requires same-origin, explicit confirmation and a curren
     expect(await db.select().from(account)).toHaveLength(1)
   } finally { sqlite.close() }
 })
+
+test('Steam operations require current admin session, same origin and share a database rate limit', async () => {
+  const { requireSteamAdmin } = await import('../apps/web/src/server/steam-admin')
+  const { db, sqlite, auth, request } = await setup()
+  try {
+    const headers = new Headers({ origin: environment.BETTER_AUTH_URL })
+    await expect(requireSteamAdmin(db, auth, headers)).rejects.toThrow('ログイン')
+    const response = await request('/sign-in/email', { email: 'admin@example.com', password })
+    headers.set('cookie', response.headers.getSetCookie().map(c => c.split(';')[0]).join('; '))
+    const foreign = new Headers(headers); foreign.set('origin', 'https://untrusted.example')
+    await expect(requireSteamAdmin(db, auth, foreign)).rejects.toThrow('サイト内')
+    await db.update(user).set({ isAdmin: false }).where(eq(user.id, 'admin'))
+    await expect(requireSteamAdmin(db, auth, headers)).rejects.toThrow('ログイン')
+    await db.update(user).set({ isAdmin: true }).where(eq(user.id, 'admin'))
+    for (let i = 0; i < 20; i++) expect(await requireSteamAdmin(db, auth, headers)).toBe('admin')
+    await expect(requireSteamAdmin(db, createAuth(db, environment), headers)).rejects.toThrow('操作回数')
+  } finally { sqlite.close() }
+})

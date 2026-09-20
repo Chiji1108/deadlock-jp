@@ -1,3 +1,6 @@
 # Generate a random secret of at least 32 characters. Never commit actual secrets.
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=http://localhost:3000
+
+# Optional, for administrator Steam lookups
+DEADLOCK_API_KEY=

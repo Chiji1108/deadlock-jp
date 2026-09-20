@@ -81,6 +81,7 @@ export async function saveEnrichment(
 			and(
 				eq(streamers.twitchId, row.twitchId),
 				eq(streamers.steamAccountId, row.steamAccountId!),
+					eq(streamers.steamLinkVersion, row.steamLinkVersion),
 				exists(
 					db
 						.select({ id: collector.id })

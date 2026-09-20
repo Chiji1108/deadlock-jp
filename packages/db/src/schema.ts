@@ -58,6 +58,7 @@ export const streamers = sqliteTable(
       sql`CASE WHEN duration_seconds > 0 THEN viewer_seconds / duration_seconds ELSE 0 END`,
     ),
     steamAccountId: integer("steam_account_id").unique(),
+    steamLinkVersion: integer("steam_link_version").notNull().default(0),
     rankTier: integer("rank_tier"),
     rankSubrank: integer("rank_subrank"),
     rankUpdatedAt: integer("rank_updated_at"),

@@ -1,7 +1,8 @@
-import { Link } from '@tanstack/react-router'
+import { getRouteApi, Link } from '@tanstack/react-router'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import type { StreamerData } from 'db/types'
 import { measurementStartLabel } from 'db/time'
+import { SteamLinkDialog } from './steam-link-dialog'
 import { DeadlockRank } from './deadlock-rank'
 import { DeadlockActivity } from './deadlock-activity'
 import { StreamingHoursHeatmap } from './streaming-hours-heatmap'
@@ -21,6 +22,7 @@ export function StreamerDetailView({
   fresh: boolean
 }) {
   const { streamer, summary } = data
+  const { admin } = getRouteApi('__root__').useLoaderData()
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <div>
@@ -60,6 +62,13 @@ export function StreamerDetailView({
           </div>
           <DeadlockRank rank={data.deadlockRank} />
         </div>
+        {admin && (
+          <SteamLinkDialog
+            key={streamer.twitchId}
+            twitchId={streamer.twitchId}
+            linked={data.deadlockRank !== null}
+          />
+        )}
       </header>
       {fresh && data.live && (
         <LivePreview

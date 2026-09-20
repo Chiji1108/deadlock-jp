@@ -1,6 +1,6 @@
 # Deadlock 日本語Twitch配信者ボード
 
-TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIは `references/` の公開画面を移植し、shadcn/ui Base UIとTanStack Tableを使っています。管理者ログインはBetter Auth + Better Auth UIを使用します。管理ダッシュボード・Steam登録操作・期間切り替えは含みません。
+TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIは `references/` の公開画面を移植し、shadcn/ui Base UIとTanStack Tableを使っています。管理者ログインはBetter Auth + Better Auth UIを使用します。管理者は配信者詳細からSteamを紐付けできます。管理ダッシュボード・期間切り替えは含みません。
 
 ## 構成
 
@@ -68,9 +68,9 @@ Drizzle Kitが生成する `packages/db/migrations/*/migration.sql` をWrangler�
 
 ## 外部APIの型更新
 
-collectorのDeadlock API・Twitch Helix API取得は `openapi-fetch` を使用します。生成型は `apps/collector/src/generated/` に保存してバージョン管理し、通常のビルドではスキーマを取得しません。
+Deadlock API・Twitch Helix API取得は `openapi-fetch` を使用します。Deadlockの共有クライアント・検証・生成型は `packages/deadlock/src/`、Twitchの生成型は `apps/collector/src/generated/` に保存します。通常のビルドではスキーマを取得しません。
 
-- Deadlock: 公式OpenAPIから `deadlock-api.d.ts` を生成。
+- Deadlock: 公式OpenAPIから `packages/deadlock/src/api.d.ts` を生成。
 - Twitch: 非公式の [twitch-api-swagger](https://github.com/DmitryScaletta/twitch-api-swagger) から `twitch-api.d.ts` を生成。公式仕様との差分に注意して更新します。OAuthトークン取得はスキーマ対象外のため、既存のfetchと検証処理を使用します。
 
 ```sh
@@ -95,7 +95,7 @@ bun scripts/import-links-local.ts --apply  # ローカルD1へ適用
 
 ## 管理者ログイン
 
-`/admin/login` からメール・パスワードでログインできます。ログイン中だけヘッダーに「管理者」を表示し、同じ画面からログアウトできます。一般登録・メール認証・パスワード再設定メールは無効です。Resendなどのメール配信サービスは不要です。Steam紐付け操作はまだ含みません。
+`/admin/login` からメール・パスワードでログインできます。ログイン中だけヘッダーに「管理者」を表示し、同じ画面からログアウトできます。一般登録・メール認証・パスワード再設定メールは無効です。Resendなどのメール配信サービスは不要です。Steam紐付け操作は管理者にだけ配信者詳細画面で表示します。
 
 ### ローカル
 
@@ -142,3 +142,15 @@ bun run --filter web deploy
 削除と開始日時の更新はD1 batchで一括確定します。実行中collectorの所有権を失効し、古い観測・補完結果の書き戻しと、同じリセット要求の再送による二重削除を防ぎます。
 
 導入時は `bun run db:migrate:remote` を先に実行し、collectorとwebの両方をデプロイしてください。両方の反映が完了してからボタンを使います。マイグレーション自体ではデータはリセットされません。
+
+### 配信者詳細からSteam紐付け
+
+管理者ログイン中は詳細画面に「Steamを紐付ける」（登録済みなら「Steam紐付けを変更」）を表示します。名前検索・マッチIDの参加者選択・直接入力の3通りに対応します。直接入力はaccount ID、SteamID3 (`[U:1:…]`)、SteamID64、`steamcommunity.com/profiles/…` URLのみで、`/id/…` のカスタムURLは非対応です。Steam Web APIキーは不要です。
+
+候補を選ぶとDeadlock APIでプレイヤーネームとランクを取得し、Twitch配信者名・Steam ID・プロフィールリンクとともに確認ダイアログへ表示します。名前が確認できない場合や通信エラーでは保存を止めます。ランクが取得不可の場合はその状態を明示して確認できます。マッチID経由では使用キャラも表示します。
+
+確認は管理者本人に紐付いた5分間・一度限りの情報としてD1に保存します。保存時にも権限・Origin・重複・元の紐付け状態を検証し、他の管理者による変更やデータリセット後の古い確認では保存しません。Steam IDの一意制約で同時登録も拒否します。操作は管理者ごとに1分20回までです。
+
+変更時は旧Steamの試合情報を消し、確認済みランクを保存します。Twitch配信集計は保持し、試合履歴・総試合時間は次回の配信中の収集で補完します。collectorは紐付けバージョンも確認し、変更前の取得結果を書き戻しません。
+
+webの `DEADLOCK_API_KEY` は任意です。利用する場合はcollectorとは別にwebにも同じキーをWorkers Secretとして設定してください。今回の追加はマイグレーション後、collectorとwebの両方をデプロイします。
