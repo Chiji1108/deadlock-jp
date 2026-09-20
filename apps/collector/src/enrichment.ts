@@ -32,7 +32,9 @@ export async function refreshEnrichment(db: Database, runId: string, apiKey?: st
 	const rows = await db
 		.select()
 		.from(streamers)
-		.where(and(isNotNull(streamers.steamAccountId), lte(streamers.enrichmentDueAt, Date.now())))
+		// Twitch collection has already updated isLive for this run. Offline
+		// identities retain their last enrichment and become eligible on resuming.
+		.where(and(eq(streamers.isLive, true), isNotNull(streamers.steamAccountId), lte(streamers.enrichmentDueAt, Date.now())))
 		.orderBy(asc(streamers.enrichmentDueAt))
 		.limit(5);
 	if (!rows.length) return;
