@@ -121,7 +121,7 @@ export function Metric({
 export function CollectionNotice({ status }: { status: Status }) {
   const text =
     status.state === 'unconfigured' || !status.lastCollectedAt
-      ? '収集の準備中です。データが届いた後にページを再読み込みしてください。'
+      ? '収集の準備中です。データは約1分ごとに自動更新されます。'
       : status.state === 'error' || !status.fresh
         ? '最新データの取得を待っています。記録済みの集計は閲覧できます。'
         : null

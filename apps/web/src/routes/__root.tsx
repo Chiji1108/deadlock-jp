@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { dateTime, LoadingPanel } from '@/components/dashboard-ui'
 import { fetchStatus } from '@/server/functions'
+import { useAutoRefresh } from '@/hooks/use-auto-refresh'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
@@ -40,6 +41,7 @@ export const Route = createRootRoute({
   errorComponent: RouteError,
 })
 function RootDocument({ children }: { children: React.ReactNode }) {
+  useAutoRefresh()
   const status = Route.useLoaderData()
   // The document shell also renders when the root loader fails or is pending.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
