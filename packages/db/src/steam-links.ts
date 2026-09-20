@@ -11,7 +11,7 @@ export interface SteamLinkPreview {
   expectedAccountId: number | null;
   expectedFirstSeenAt: number;
   expectedVersion: number;
-  accountId: number;
+  accountId: number | null;
   name: string;
   avatar: string | null;
   rank: Rank;

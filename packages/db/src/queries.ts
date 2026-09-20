@@ -66,7 +66,9 @@ function gameData(row: StreamerRecord) {
               ? "ready"
               : row.enrichmentError
                 ? "unavailable"
-                : "pending",
+                : row.isLive
+                  ? "pending"
+                  : "waiting",
         };
   return {
     deadlockRank:

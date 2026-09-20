@@ -30,7 +30,7 @@ import { Avatar } from './dashboard-ui'
 type Reply = Awaited<ReturnType<typeof steamAction>>
 type Preview = Extract<
   Extract<Reply, { ok: true }>['result'],
-  { kind: 'preview' }
+  { kind: 'preview' | 'unlink-preview' }
 >
 const profileUrl = (id: number) =>
   `https://steamcommunity.com/profiles/${BigInt(id) + 76561197960265728n}`
@@ -61,7 +61,7 @@ export function SteamLinkDialog({
   const [busy, setBusy] = useState(false)
   const working = useRef(false)
   async function request(
-    action: 'search' | 'match' | 'preview' | 'save',
+    action: 'search' | 'match' | 'preview' | 'unlink-preview' | 'save',
     input: string,
     candidate?: SteamCandidate,
   ) {
@@ -79,7 +79,7 @@ export function SteamLinkDialog({
       }
       const result = reply.result
       if (result.kind === 'candidates') setCandidates(result.candidates)
-      if (result.kind === 'preview') {
+      if (result.kind === 'preview' || result.kind === 'unlink-preview') {
         setSelected(candidate ?? null)
         setPreview(result)
         setOpen(false)
@@ -87,7 +87,11 @@ export function SteamLinkDialog({
       if (result.kind === 'saved') {
         setPreview(null)
         setOpen(false)
-        setNotice('Steamアカウントを紐付けました。')
+        setNotice(
+          preview?.kind === 'unlink-preview'
+            ? 'Steamアカウントの紐付けを解除しました。'
+            : 'Steamアカウントを紐付けました。',
+        )
         try {
           await router.invalidate({ sync: true })
         } catch {
@@ -231,6 +235,15 @@ export function SteamLinkDialog({
               )}
             </TabsContent>
           </Tabs>
+          {linked && (
+            <Button
+              variant="destructive"
+              disabled={busy}
+              onClick={() => request('unlink-preview', 'confirm')}
+            >
+              紐付けを解除
+            </Button>
+          )}
         </DialogContent>
       </Dialog>
       <AlertDialog
@@ -246,13 +259,30 @@ export function SteamLinkDialog({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              このSteamアカウントを紐付けますか？
+              {preview?.kind === 'unlink-preview'
+                ? 'Steamアカウントの紐付けを解除しますか？'
+                : 'このSteamアカウントを紐付けますか？'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {preview?.streamerName} の紐付け先を確認してください。
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {preview && (
+          {preview?.kind === 'unlink-preview' && (
+            <div className="flex flex-col gap-3">
+              <a
+                href={profileUrl(preview.accountId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm underline underline-offset-4"
+              >
+                Steamプロフィール · ID: {preview.accountId}
+              </a>
+              <p className="text-sm text-muted-foreground">
+                ランク・試合履歴・総試合時間を削除します。配信履歴と配信集計は残ります。
+              </p>
+            </div>
+          )}
+          {preview?.kind === 'preview' && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 <Avatar
@@ -310,10 +340,16 @@ export function SteamLinkDialog({
               戻る
             </Button>
             <Button
+              variant={
+                preview?.kind === 'unlink-preview' ? 'destructive' : 'default'
+              }
               disabled={busy || !preview}
               onClick={() => preview && request('save', preview.token)}
             >
-              {busy && <Spinner data-icon="inline-start" />}紐付けを保存
+              {busy && <Spinner data-icon="inline-start" />}
+              {preview?.kind === 'unlink-preview'
+                ? '紐付けを解除'
+                : '紐付けを保存'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

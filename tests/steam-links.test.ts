@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { testDatabase } from "./d1";
 import { cache, collector, eq, streamers } from "../packages/db/src/index";
+import { getDetail } from "../packages/db/src/queries";
 import { saveSteamLink } from "../packages/db/src/steam-links";
 import { steamAdminAction } from "../apps/web/src/server/steam-admin";
 import {
@@ -254,6 +255,148 @@ test("collector cannot overwrite after linking away and back to the same Steam I
         .where(eq(streamers.twitchId, "1"))
         .get())!.rankTier,
     ).toBe(8);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("unlink requires a fresh confirmation, preserves Twitch metrics and rejects late collector results", async () => {
+  const { db, sqlite } = await setup();
+  try {
+    await db.insert(collector).values({ id: 1, runId: "run" });
+    const old = (await db
+      .select()
+      .from(streamers)
+      .where(eq(streamers.twitchId, "1"))
+      .get())!;
+    const preview = await steamAdminAction(
+      db,
+      "admin",
+      { action: "unlink-preview", twitchId: "1", value: "confirm" },
+      api(),
+    );
+    if (preview.kind !== "unlink-preview") throw new Error();
+    expect(preview.accountId).toBe(10);
+    expect(
+      (await db
+        .select()
+        .from(streamers)
+        .where(eq(streamers.twitchId, "1"))
+        .get())!.steamAccountId,
+    ).toBe(10);
+    await expect(saveSteamLink(db, preview.token, "other")).rejects.toThrow();
+    const stale = await steamAdminAction(
+      db,
+      "admin",
+      { action: "preview", twitchId: "1", value: "55" },
+      api(),
+    );
+    if (stale.kind !== "preview") throw new Error();
+    await steamAdminAction(
+      db,
+      "admin",
+      { action: "save", twitchId: "1", value: preview.token },
+      api(),
+    );
+    await saveEnrichment(
+      db,
+      "run",
+      old,
+      { kind: "ok", value: { tier: 8, subrank: 1 } },
+      { kind: "ok", value: old.recentMatches },
+      { kind: "ok", value: 500 },
+      Date.now(),
+    );
+    expect(
+      await db
+        .select()
+        .from(streamers)
+        .where(eq(streamers.twitchId, "1"))
+        .get(),
+    ).toMatchObject({
+      steamAccountId: null,
+      steamLinkVersion: 1,
+      rankTier: null,
+      rankSubrank: null,
+      rankUpdatedAt: null,
+      recentMatches: [],
+      historyUpdatedAt: null,
+      matchTimeSeconds: null,
+      matchTimeUpdatedAt: null,
+      durationSeconds: 120,
+      viewerSeconds: 600,
+    });
+    await expect(saveSteamLink(db, stale.token, "admin")).rejects.toThrow(
+      "変更",
+    );
+    await expect(saveSteamLink(db, preview.token, "admin")).rejects.toThrow();
+    await expect(
+      steamAdminAction(
+        db,
+        "admin",
+        { action: "unlink-preview", twitchId: "1", value: "confirm" },
+        api(),
+      ),
+    ).rejects.toThrow("紐付けされていません");
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("unlink confirmation cannot remove a replacement link", async () => {
+  const { db, sqlite } = await setup();
+  try {
+    const unlink = await steamAdminAction(
+      db,
+      "admin",
+      { action: "unlink-preview", twitchId: "1", value: "confirm" },
+      api(),
+    );
+    const replacement = await steamAdminAction(
+      db,
+      "admin",
+      { action: "preview", twitchId: "1", value: "55" },
+      api(),
+    );
+    if (unlink.kind !== "unlink-preview" || replacement.kind !== "preview")
+      throw new Error();
+    await saveSteamLink(db, replacement.token, "admin");
+    await expect(saveSteamLink(db, unlink.token, "admin")).rejects.toThrow(
+      "変更",
+    );
+    expect(
+      (await db
+        .select()
+        .from(streamers)
+        .where(eq(streamers.twitchId, "1"))
+        .get())!.steamAccountId,
+    ).toBe(55);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("unobserved match history waits for a stream while ready and unavailable states remain distinct", async () => {
+  const { db, sqlite } = await setup();
+  try {
+    const status = async () =>
+      (await getDetail(db, "1"))!.data.deadlockActivity?.status;
+    expect(await status()).toBe("waiting");
+    await db
+      .update(streamers)
+      .set({ isLive: true })
+      .where(eq(streamers.twitchId, "1"));
+    expect(await status()).toBe("pending");
+    await db
+      .update(streamers)
+      .set({ enrichmentError: "Unavailable" })
+      .where(eq(streamers.twitchId, "1"));
+    expect(await status()).toBe("unavailable");
+    await db
+      .update(streamers)
+      .set({ historyUpdatedAt: Date.now() })
+      .where(eq(streamers.twitchId, "1"));
+    expect(await status()).toBe("ready");
   } finally {
     sqlite.close();
   }

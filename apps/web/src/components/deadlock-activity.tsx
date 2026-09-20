@@ -169,8 +169,10 @@ export function DeadlockActivity({
       ) : (
         <span className="text-xs text-muted-foreground">
           {activity.status === 'pending'
-            ? '試合履歴を取得中'
-            : '取得できる試合履歴がありません'}
+            ? '試合履歴の取得待ち'
+            : activity.status === 'waiting'
+              ? '次回配信時に取得予定'
+              : '取得できる試合履歴がありません'}
         </span>
       )}
     </div>

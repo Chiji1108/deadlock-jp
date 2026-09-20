@@ -6,7 +6,7 @@ import type { createAuth } from '@/lib/auth/config'
 import { parseSteamInput, steamApi } from './steam-api'
 
 export type SteamActionInput = {
-  action: 'search' | 'match' | 'preview' | 'save'
+  action: 'search' | 'match' | 'preview' | 'unlink-preview' | 'save'
   twitchId: string
   value: string
 }
@@ -56,7 +56,9 @@ export async function steamAdminAction(
   const input = raw as Partial<SteamActionInput> | null
   if (
     !input ||
-    !['search', 'match', 'preview', 'save'].includes(input.action ?? '') ||
+    !['search', 'match', 'preview', 'unlink-preview', 'save'].includes(
+      input.action ?? '',
+    ) ||
     typeof input.twitchId !== 'string' ||
     !/^\d{1,30}$/.test(input.twitchId) ||
     typeof input.value !== 'string' ||
@@ -85,6 +87,34 @@ export async function steamAdminAction(
     return {
       kind: 'saved' as const,
       ...(await saveSteamLink(db, value, adminId, Date.now(), target.twitchId)),
+    }
+  }
+  if (input.action === 'unlink-preview') {
+    if (target.steamAccountId === null)
+      throw new SteamLinkError('Steamアカウントは紐付けされていません。')
+    const token = await storeLinkPreview(db, {
+      adminId,
+      twitchId: target.twitchId,
+      streamerName: target.displayName,
+      expectedAccountId: target.steamAccountId,
+      expectedFirstSeenAt: target.firstSeenAt!,
+      expectedVersion: target.steamLinkVersion,
+      accountId: null,
+      name: '',
+      avatar: null,
+      rank: {
+        accountId: target.steamAccountId,
+        tier: null,
+        subrank: null,
+        unavailable: false,
+        updatedAt: null,
+      },
+    })
+    return {
+      kind: 'unlink-preview' as const,
+      token,
+      accountId: target.steamAccountId,
+      streamerName: target.displayName,
     }
   }
   const annotate = async (

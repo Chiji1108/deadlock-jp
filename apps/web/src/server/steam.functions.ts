@@ -36,6 +36,16 @@ export const steamAction = createServerFn({ method: 'POST' })
         ),
       }
     } catch (error) {
+      if (!(error instanceof SteamLinkError)) {
+        const action = (data as Partial<SteamActionInput> | null)?.action
+        console.error('steam-admin.unexpected-error', {
+          action:
+            typeof action === 'string'
+              ? action.slice(0, 30)
+              : 'invalid',
+          error,
+        })
+      }
       // Avoid exposing SQL, credentials or request internals in browser errors.
       const message =
         error instanceof SteamLinkError

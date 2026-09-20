@@ -18,7 +18,7 @@ export interface Activity {
   historyUpdatedAt: number | null;
   matchTimeSeconds: number | null;
   matchTimeUpdatedAt: number | null;
-  status: "pending" | "ready" | "unavailable";
+  status: "pending" | "waiting" | "ready" | "unavailable";
 }
 export interface Metrics {
   hoursStreamed: number;
