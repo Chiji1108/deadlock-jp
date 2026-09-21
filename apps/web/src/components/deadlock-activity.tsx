@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import {
   Tooltip,
   TooltipContent,
@@ -13,40 +13,44 @@ import type { Activity, MatchTime } from 'db/types'
 
 const outcomes = { win: '勝利', loss: '敗北', unknown: '判定なし' }
 
-// Hover/focus on desktop, tap on touch. Prevent the containing row's navigation.
+// Custom links navigate on tap; standalone hints open on tap.
 function ActivityHint({
   label,
   className,
   children,
   hint,
+  render,
 }: {
   label: string
   className?: string
   children: ReactNode
   hint: ReactNode
+  render?: ReactElement
 }) {
   const [open, setOpen] = useState(false)
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger
+        aria-label={label}
+        className={cn(
+          'rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+          className,
+        )}
         render={
-          <button
-            type="button"
-            aria-label={label}
-            className={cn(
-              'rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-              className,
-            )}
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              setOpen(true)
-            }}
-          >
-            {children}
-          </button>
+          render ?? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                setOpen(true)
+              }}
+            />
+          )
         }
-      />
+      >
+        {children}
+      </TooltipTrigger>
       <TooltipContent
         sideOffset={5}
         onClick={(event) => event.stopPropagation()}
@@ -107,9 +111,11 @@ function MatchPortrait({
 export function DeadlockMatchTime({
   activity,
   plain = false,
+  render,
 }: {
   activity: MatchTime | null
   plain?: boolean
+  render?: ReactElement
 }) {
   if (!activity || activity.matchTimeSeconds === null)
     return plain ? (
@@ -120,7 +126,8 @@ export function DeadlockMatchTime({
   const hours = number(activity.matchTimeSeconds / 3600, 1)
   return (
     <ActivityHint
-      label={`累計試合時間 ${hours}時間 — 最終確認日時`}
+      render={render}
+      label={`累計試合時間 ${hours}時間 — ${render ? '配信者の詳細' : '最終確認日時'}`}
       className={cn(
         'w-fit tabular-nums',
         plain

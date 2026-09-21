@@ -122,7 +122,17 @@ export function RankingBoard({
       id: 'matchTime',
       header: () => sortHeader('matchTime', '累計試合時間'),
       cell: ({ row }) => (
-        <DeadlockMatchTime activity={row.original.deadlockActivity} plain />
+        <DeadlockMatchTime
+          activity={row.original.deadlockActivity}
+          plain
+          render={
+            <Link
+              to="/streamers/$id"
+              params={{ id: row.original.twitchId }}
+              search={{ period: filters.period }}
+            />
+          }
+        />
       ),
     },
     ...metricColumns.map((c) => ({
