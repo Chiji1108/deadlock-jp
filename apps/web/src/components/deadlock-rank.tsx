@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import type { ReactElement } from 'react'
 import { Badge } from '@/components/ui/badge'
 import {
   Tooltip,
@@ -26,9 +27,11 @@ const names = [
 export function DeadlockRank({
   rank,
   plain = false,
+  render,
 }: {
   rank: RankingRow['deadlockRank']
   plain?: boolean
+  render?: ReactElement
 }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
   if (!rank) return null
@@ -63,24 +66,26 @@ export function DeadlockRank({
   return (
     <Tooltip>
       <TooltipTrigger
+        className="inline-flex w-fit rounded-md focus-visible:outline-2 focus-visible:outline-ring"
         render={
-          <a
-            className="inline-flex w-fit rounded-md focus-visible:outline-2 focus-visible:outline-ring"
-            href={`https://steamcommunity.com/profiles/${BigInt(rank.accountId) + BigInt('76561197960265728')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${label} — Steamプロフィール`}
-          >
-            {plain ? (
-              <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
-                {content}
-              </span>
-            ) : (
-              <Badge variant="secondary">{content}</Badge>
-            )}
-          </a>
+          render ?? (
+            <a
+              href={`https://steamcommunity.com/profiles/${BigInt(rank.accountId) + BigInt('76561197960265728')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${label} — Steamプロフィール`}
+            />
+          )
         }
-      />
+      >
+        {plain ? (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
+            {content}
+          </span>
+        ) : (
+          <Badge variant="secondary">{content}</Badge>
+        )}
+      </TooltipTrigger>
       <TooltipContent>
         {rank.tier === null ? (
           <p>Deadlock APIでランクを確認できていません。</p>

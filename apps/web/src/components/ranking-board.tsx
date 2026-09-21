@@ -100,7 +100,18 @@ export function RankingBoard({
       header: () => sortHeader('rank', 'ランク'),
       cell: ({ row }) =>
         row.original.deadlockRank ? (
-          <DeadlockRank rank={row.original.deadlockRank} plain />
+          <DeadlockRank
+            rank={row.original.deadlockRank}
+            plain
+            render={
+              <Link
+                to="/streamers/$id"
+                params={{ id: row.original.twitchId }}
+                search={{ period: filters.period }}
+                aria-label={`${row.original.displayName}の詳細`}
+              />
+            }
+          />
         ) : (
           <span className="text-muted-foreground" aria-label="ランク未登録">
             —
