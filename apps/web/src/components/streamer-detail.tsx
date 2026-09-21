@@ -14,11 +14,6 @@ import { LivePreview } from './live-preview'
 import { Avatar, Metric, number } from './dashboard-ui'
 import { SessionTable } from './session-table'
 import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { Empty, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 
 export function StreamerDetailView({
@@ -64,31 +59,29 @@ export function StreamerDetailView({
             name={streamer.displayName}
             url={streamer.profileImageUrl}
           />
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-x-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex min-w-0 flex-col gap-1">
               <h1 className="break-all text-xl leading-6 font-semibold">
                 {streamer.displayName}
               </h1>
-              <div className="flex shrink-0 items-center">
-                <ProfileLink
-                  icon={siTwitch}
-                  href={`https://www.twitch.tv/${encodeURIComponent(streamer.login)}`}
-                  label="Twitchで開く"
-                />
-                {data.deadlockRank && (
-                  <ProfileLink
-                    icon={siSteam}
-                    href={`https://steamcommunity.com/profiles/${BigInt(data.deadlockRank.accountId) + BigInt('76561197960265728')}`}
-                    label="Steamプロフィール"
-                  />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="break-all text-sm leading-4 text-muted-foreground">
                 @{streamer.login}
               </span>
-              <DeadlockRank rank={data.deadlockRank} />
+            </div>
+            <DeadlockRank rank={data.deadlockRank} />
+            <div className="flex shrink-0 items-center gap-1">
+              <ProfileLink
+                icon={siTwitch}
+                href={`https://www.twitch.tv/${encodeURIComponent(streamer.login)}`}
+                label="Twitchで開く"
+              />
+              {data.deadlockRank && (
+                <ProfileLink
+                  icon={siSteam}
+                  href={`https://steamcommunity.com/profiles/${BigInt(data.deadlockRank.accountId) + BigInt('76561197960265728')}`}
+                  label="Steamプロフィール"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -197,32 +190,16 @@ function ProfileLink({
   label: string
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${label}（新しいタブ）`}
-            className={buttonVariants({
-              variant: 'ghost',
-              size: 'icon-lg',
-              className: 'size-11',
-            })}
-          />
-        }
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="size-5"
-          aria-hidden="true"
-        >
-          <path d={icon.path} />
-        </svg>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${label}（新しいタブ）`}
+      className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d={icon.path} />
+      </svg>
+    </a>
   )
 }
