@@ -56,6 +56,7 @@ Drizzle Kitが生成する `packages/db/migrations/*/migration.sql` をWrangler�
 - Steam未紐付けはランク・試合時間を「—」で表示します。管理者は配信者詳細画面からSteamを紐付けできます。
 - Steam紐付け済みで、日本語Deadlock配信中と確認できた人だけ、ランク・通常モードの累計試合時間・直近20試合を約1時間ごとに更新（更新予定時刻が古い順に毎分最大5人）。オフライン・別カテゴリ配信中・未観測の人は取得せず、最後の取得値を保持します。配信再開時に更新予定時刻を過ぎていれば再び対象になり、1時間の更新間隔や失敗時の待機時間は維持します。一時失敗は前回値を保持しバックオフ、403/404は対象値を消去します。紐付け変更時は旧アカウントのキャッシュを消し `enrichment_due_at` を0にする必要があります。
 - `collector_state` と `streamers.enrichment_error` で取得状況を確認できます。Twitch成功時刻とDeadlock補完失敗は分けて扱います。
+- collectorの実行ログは `runId` で追跡できます。`collector.started` はDBアクセス前の起動、`collector.skipped` はスキップ理由（`lease_active`: ロック有効、`scheduled_time_not_newer`: 同じ／古い実行予定時刻、`missing_twitch_credentials`: Twitch認証設定不足）、`collector.collected` はTwitch収集・保存成功（配信件数と所要時間）です。成功ログはDeadlock補完の成功を意味しません。ロック取得失敗時の理由は取得後の診断用スナップショットで、並行実行で状態が変わった場合は `state_changed`、診断の読み取りに失敗した場合は `run_not_acquired` を記録します。既存の `collector.failed` はロック取得時のDBエラーも記録します。起動ログが途絶えた場合はcron実行履歴とログ保存設定も確認してください。
 
 ## 検証
 

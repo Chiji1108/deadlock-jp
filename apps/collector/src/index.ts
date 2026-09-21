@@ -17,15 +17,45 @@ function getClient(id: string, secret: string) {
 	return cachedClient.client;
 }
 export async function collect(env: CollectorEnv, scheduledAt: number, client?: TwitchClient) {
-	const db = createDb(env.DB),
-		runId = crypto.randomUUID();
-	if (!(await acquireRun(db, runId, scheduledAt, Date.now()))) return;
 	const startedAt = Date.now();
+	const runId = crypto.randomUUID();
+	console.info('collector.started', { runId, scheduledAt, startedAt, scheduleDelayMs: startedAt - scheduledAt });
+	const db = createDb(env.DB);
+	let acquired;
+	try {
+		acquired = await acquireRun(db, runId, scheduledAt, startedAt);
+	} catch (error) {
+		console.error('collector.failed', { runId, scheduledAt, stage: 'acquire-run', durationMs: Date.now() - startedAt, error: errorDetails(error) });
+		throw error;
+	}
+	if (!acquired) {
+		// This is a diagnostic snapshot after the failed acquisition, not an atomic
+		// explanation: another run may have released its lease in the meantime.
+		try {
+			const state = await db.select({ leaseUntil: collector.leaseUntil, lastScheduledAt: collector.lastScheduledAt })
+				.from(collector).where(eq(collector.id, 1)).get();
+			const reasons = [];
+			if (state && state.leaseUntil >= startedAt) reasons.push('lease_active');
+			if (state && state.lastScheduledAt >= scheduledAt) reasons.push('scheduled_time_not_newer');
+			console.info('collector.skipped', {
+				runId, scheduledAt, reasons: reasons.length ? reasons : ['state_changed'],
+				stateObservedAfterAttempt: true, ...state, durationMs: Date.now() - startedAt,
+			});
+		} catch (error) {
+			console.warn('collector.skipped', { runId, scheduledAt, reasons: ['run_not_acquired'], diagnosticError: errorDetails(error) });
+		}
+		return;
+	}
 	let stage = 'load-active';
 	const ownRun = and(eq(collector.id, 1), eq(collector.runId, runId));
 	try {
 		if (!client && (!env.TWITCH_CLIENT_ID || !env.TWITCH_CLIENT_SECRET)) {
 			await db.update(collector).set({ state: 'unconfigured' }).where(ownRun);
+			console.warn('collector.skipped', {
+				runId, scheduledAt, reasons: ['missing_twitch_credentials'],
+				missingBindings: (['TWITCH_CLIENT_ID', 'TWITCH_CLIENT_SECRET'] as const).filter((key) => !env[key]),
+				durationMs: Date.now() - startedAt,
+			});
 			return;
 		}
 		const twitch = client ?? getClient(env.TWITCH_CLIENT_ID!, env.TWITCH_CLIENT_SECRET!);
@@ -104,6 +134,10 @@ export async function collect(env: CollectorEnv, scheduledAt: number, client?: T
 			.update(collector)
 			.set({ state: 'ready', firstCollectedAt: sql`COALESCE(${collector.firstCollectedAt}, ${at})`, lastCollectedAt: at, error: null })
 			.where(ownRun);
+		console.info('collector.collected', {
+			runId, scheduledAt, collectedAt: at, liveCount: snapshot.size,
+			previousLiveCount: active.length, durationMs: Date.now() - startedAt,
+		});
 		const enrichmentStartedAt = Date.now();
 		stage = 'enrichment';
 		try {
