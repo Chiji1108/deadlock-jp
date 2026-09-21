@@ -19,16 +19,14 @@ export interface SteamLinkState {
   value: string
   candidates: SteamCandidate[] | null
   error: string
-  notice: string
 }
 export const initialSteamLinkState: SteamLinkState = {
   screen: { kind: 'closed' },
   pending: null,
-  method: 'search',
+  method: 'direct',
   value: '',
   candidates: null,
   error: '',
-  notice: '',
 }
 type Event =
   | { type: 'open'; open: boolean }
@@ -37,9 +35,8 @@ type Event =
   | { type: 'start'; operation: Operation; clearCandidates: boolean }
   | { type: 'candidates'; candidates: SteamCandidate[] }
   | { type: 'preview'; preview: Preview; selected: SteamCandidate | null }
-  | { type: 'saved'; notice: string }
+  | { type: 'saved' }
   | { type: 'error'; error: string }
-  | { type: 'notice'; notice: string }
   | { type: 'back' | 'finish' }
 export function steamLinkReducer(
   state: SteamLinkState,
@@ -52,10 +49,10 @@ export function steamLinkReducer(
         ? {
             ...state,
             screen: { kind: 'editing' },
+            method: 'direct',
             value: '',
             candidates: null,
             error: '',
-            notice: '',
           }
         : { ...state, screen: { kind: 'closed' } }
     case 'method':
@@ -89,11 +86,9 @@ export function steamLinkReducer(
         },
       }
     case 'saved':
-      return { ...state, screen: { kind: 'closed' }, notice: event.notice }
+      return { ...state, screen: { kind: 'closed' } }
     case 'error':
       return { ...state, error: event.error }
-    case 'notice':
-      return { ...state, notice: event.notice }
     case 'back':
       return state.pending
         ? state

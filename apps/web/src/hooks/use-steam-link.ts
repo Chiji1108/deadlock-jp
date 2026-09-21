@@ -1,5 +1,6 @@
 import { useReducer, useRef } from 'react'
 import { useRouter } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { steamAction } from '@/server/steam.functions'
 import type { SteamCandidate } from '@/server/steam-admin'
 import { initialSteamLinkState, steamLinkReducer } from './steam-link-state'
@@ -39,19 +40,19 @@ export function useSteamLink(twitchId: string) {
           selected: candidate ?? null,
         })
       if (result.kind === 'saved') {
-        dispatch({
-          type: 'saved',
-          notice:
-            preview?.kind === 'unlink-preview'
-              ? 'Steamアカウントの紐付けを解除しました。'
-              : 'Steamアカウントを紐付けました。',
-        })
+        dispatch({ type: 'saved' })
+        const toastId = toast.success(
+          preview?.kind === 'unlink-preview'
+            ? 'Steamアカウントの紐付けを解除しました。'
+            : 'Steamアカウントを紐付けました。',
+        )
         try {
           await router.invalidate({ sync: true })
         } catch {
-          dispatch({
-            type: 'notice',
-            notice: '保存しました。画面を再読み込みしてください。',
+          toast.warning('保存しました。画面を再読み込みしてください。', {
+            id: toastId,
+            duration: Infinity,
+            closeButton: true,
           })
         }
       }

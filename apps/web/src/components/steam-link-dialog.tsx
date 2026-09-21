@@ -27,12 +27,12 @@ import { Avatar } from './dashboard-ui'
 const profileUrl = (id: number) =>
   `https://steamcommunity.com/profiles/${BigInt(id) + 76561197960265728n}`
 const methods = {
-  search: { label: '名前検索', placeholder: 'プレイヤーネーム' },
-  match: { label: 'マッチID', placeholder: 'マッチID' },
   direct: {
     label: '直接入力',
     placeholder: 'Steam ID または /profiles/… のURL',
   },
+  search: { label: '名前検索', placeholder: 'プレイヤーネーム' },
+  match: { label: 'マッチID', placeholder: 'マッチID' },
 }
 export function SteamLinkDialog({
   twitchId,
@@ -49,7 +49,6 @@ export function SteamLinkDialog({
     preview,
     selected,
     error,
-    notice,
     busy,
     request,
     setOpen,
@@ -276,11 +275,6 @@ export function SteamLinkDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {notice && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {notice}
-        </p>
-      )}
     </>
   )
 }

@@ -13,7 +13,6 @@ import { fetchAdmin } from '@/server/auth.functions'
 import { ResetMeasurements } from '@/components/reset-measurements'
 import { Separator } from '@/components/ui/separator'
 import { SignIn } from '@/components/auth/sign-in'
-import { Toaster } from '@/components/ui/sonner'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -50,7 +49,6 @@ function AdminLogin() {
   return (
     <div className="mx-auto w-full max-w-sm">
       <h1 className="sr-only">管理者ログイン</h1>
-      <Toaster />
       {!configured ? (
         <Card>
           <CardHeader>

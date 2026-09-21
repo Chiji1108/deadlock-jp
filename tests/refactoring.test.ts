@@ -75,7 +75,7 @@ test("confirmation survives save failure and returns to editing only when idle",
   expect(state.error).toBe("");
 });
 
-test("successful save clears confirmation even when page refresh fails", () => {
+test("successful save clears confirmation", () => {
   let state = steamLinkReducer(initialSteamLinkState, {
     type: "preview",
     preview,
@@ -86,10 +86,8 @@ test("successful save clears confirmation even when page refresh fails", () => {
     operation: "save",
     clearCandidates: false,
   });
-  state = steamLinkReducer(state, { type: "saved", notice: "saved" });
-  state = steamLinkReducer(state, { type: "notice", notice: "reload" });
+  state = steamLinkReducer(state, { type: "saved" });
   state = steamLinkReducer(state, { type: "finish" });
   expect(state.screen).toEqual({ kind: "closed" });
-  expect(state.notice).toBe("reload");
   expect(state.pending).toBeNull();
 });

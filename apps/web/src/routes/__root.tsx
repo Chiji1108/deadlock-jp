@@ -5,6 +5,7 @@ import {
   createRootRoute,
   useRouter,
 } from '@tanstack/react-router'
+import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -126,6 +127,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </div>
           </footer>
         </TooltipProvider>
+        <Toaster />
         <Scripts />
       </body>
     </html>
