@@ -69,7 +69,7 @@ export function StreamerDetailView({
               </span>
             </div>
             <DeadlockRank rank={data.deadlockRank} />
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="flex shrink-0 items-center">
               <ProfileLink
                 icon={siTwitch}
                 href={`https://www.twitch.tv/${encodeURIComponent(streamer.login)}`}
