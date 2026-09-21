@@ -74,7 +74,7 @@ function MatchPortrait({
       label={label}
       className={cn(
         'relative flex shrink-0 items-end justify-center overflow-hidden border-b-2',
-        'h-10 w-full sm:h-11 sm:w-9',
+        'h-11 w-9',
         match.outcome === 'win'
           ? 'border-match-win bg-match-win/10'
           : match.outcome === 'loss'
@@ -161,7 +161,7 @@ export function DeadlockActivity({ activity }: { activity: Activity | null }) {
           <div
             role="group"
             aria-label={`直近${matches.length}戦・左が最新。緑は勝利、赤は敗北。`}
-            className="grid grid-cols-10 gap-1 sm:flex sm:flex-wrap"
+            className="flex flex-wrap gap-1"
           >
             {matches.map((match) => (
               <MatchPortrait key={match.matchId} match={match} />
