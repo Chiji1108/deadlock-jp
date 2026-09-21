@@ -1,5 +1,7 @@
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { siSteam, siTwitch } from 'simple-icons'
+import type { SimpleIcon } from 'simple-icons'
 import type { StreamerData, Period } from 'db/types'
 import { periodLabels } from 'db/periods'
 import { PeriodPicker } from './period-picker'
@@ -11,7 +13,12 @@ import { StreamingHoursHeatmap } from './streaming-hours-heatmap'
 import { LivePreview } from './live-preview'
 import { Avatar, Metric, number } from './dashboard-ui'
 import { SessionTable } from './session-table'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Empty, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 
 export function StreamerDetailView({
@@ -57,22 +64,33 @@ export function StreamerDetailView({
             name={streamer.displayName}
             url={streamer.profileImageUrl}
           />
-          <div className="flex min-w-0 flex-col">
-            <h1 className="break-all text-xl leading-6 font-semibold">
-              {streamer.displayName}
-            </h1>
-            <a
-              className="inline-flex w-fit items-center gap-1 text-sm leading-4 text-muted-foreground hover:text-foreground hover:underline"
-              href={`https://www.twitch.tv/${encodeURIComponent(streamer.login)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`@${streamer.login}のTwitchを開く（新しいタブ）`}
-            >
-              <span className="break-all">@{streamer.login}</span>
-              <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
-            </a>
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-x-2">
+              <h1 className="break-all text-xl leading-6 font-semibold">
+                {streamer.displayName}
+              </h1>
+              <div className="flex shrink-0 items-center">
+                <ProfileLink
+                  icon={siTwitch}
+                  href={`https://www.twitch.tv/${encodeURIComponent(streamer.login)}`}
+                  label="Twitchで開く"
+                />
+                {data.deadlockRank && (
+                  <ProfileLink
+                    icon={siSteam}
+                    href={`https://steamcommunity.com/profiles/${BigInt(data.deadlockRank.accountId) + BigInt('76561197960265728')}`}
+                    label="Steamプロフィール"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="break-all text-sm leading-4 text-muted-foreground">
+                @{streamer.login}
+              </span>
+              <DeadlockRank rank={data.deadlockRank} />
+            </div>
           </div>
-          <DeadlockRank rank={data.deadlockRank} />
         </div>
         {admin && (
           <SteamLinkDialog
@@ -166,5 +184,45 @@ export function StreamerDetailView({
         )}
       </section>
     </div>
+  )
+}
+
+function ProfileLink({
+  icon,
+  href,
+  label,
+}: {
+  icon: SimpleIcon
+  href: string
+  label: string
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${label}（新しいタブ）`}
+            className={buttonVariants({
+              variant: 'ghost',
+              size: 'icon-lg',
+              className: 'size-11',
+            })}
+          />
+        }
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="size-5"
+          aria-hidden="true"
+        >
+          <path d={icon.path} />
+        </svg>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   )
 }

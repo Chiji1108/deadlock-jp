@@ -67,16 +67,7 @@ export function DeadlockRank({
     <Tooltip>
       <TooltipTrigger
         className="inline-flex w-fit rounded-md focus-visible:outline-2 focus-visible:outline-ring"
-        render={
-          render ?? (
-            <a
-              href={`https://steamcommunity.com/profiles/${BigInt(rank.accountId) + BigInt('76561197960265728')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${label} — Steamプロフィール`}
-            />
-          )
-        }
+        render={render ?? <span tabIndex={0} aria-label={label} />}
       >
         {plain ? (
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
