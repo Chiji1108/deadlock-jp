@@ -52,9 +52,25 @@ test("HTTP errors preserve status and Retry-After even with non-JSON bodies", as
   for (const status of [403, 404]) {
     const client = createDeadlockClient(
       undefined,
-      async () => new Response("<html>unavailable</html>", { status }),
+      async () => new Response("", { status }),
     );
     expect(await client.rank(123)).toEqual({ kind: "unavailable" });
+  }
+  // 手前の Cloudflare が止めたページは、見られないのではなく失敗（取れていた値を消さない）
+  for (const status of [403, 404]) {
+    const client = createDeadlockClient(
+      undefined,
+      async () =>
+        new Response("<html>Attention Required! | Cloudflare</html>", {
+          status,
+          headers: { "Content-Type": "text/html; charset=UTF-8" },
+        }),
+    );
+    expect(await client.rank(123)).toEqual({
+      kind: "error",
+      error: `HTTP ${status}`,
+      retryAt: 0,
+    });
   }
   const retryDate = new Date(Date.now() + 600000).toUTCString();
   const client = createDeadlockClient(

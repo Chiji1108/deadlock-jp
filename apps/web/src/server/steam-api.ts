@@ -1,5 +1,5 @@
 import { SteamLinkError } from 'db/steam-links'
-import { createDeadlockApi } from 'deadlock'
+import { blockedByCloudflare, createDeadlockApi } from 'deadlock'
 import { parseHeroes, parseRank } from 'deadlock/model'
 
 export const steamProfileUrl = (id: number) =>
@@ -119,7 +119,11 @@ export function steamApi(apiKey?: string, request: typeof fetch = fetch) {
         'Deadlock APIと通信できませんでした。再試行してください。',
       )
     }
-    if (unavailable.includes(result.response.status)) return null
+    if (
+      unavailable.includes(result.response.status) &&
+      !blockedByCloudflare(result.response)
+    )
+      return null
     if (!result.response.ok)
       throw new SteamLinkError(
         result.response.status === 429
