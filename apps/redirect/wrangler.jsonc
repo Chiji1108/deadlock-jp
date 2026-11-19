@@ -1,0 +1,7 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "deadlock-jp-redirect",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-16",
+	"routes": [{ "pattern": "deadlock.jp", "custom_domain": true }]
+}

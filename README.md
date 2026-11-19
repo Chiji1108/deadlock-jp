@@ -7,6 +7,9 @@ TanStack Start + Cloudflare Workers + D1 / Drizzle ORM。UIはshadcn/ui Base UI�
 - `packages/db`: Drizzleスキーマ、D1接続、公開クエリ、原子的な集計処理、マイグレーション。
 - `apps/web`: Workers上のSSR。初期HTMLに一覧・詳細を含みます。ソート・LIVE絞り込み・ページングはURLを使ってサーバー側で実行します。
 - `apps/collector`: 毎分Cronで日本語Deadlock配信を収集。HTTP経由の収集・DB更新エンドポイントは公開しません。
+- `apps/redirect`: `deadlock.jp` をデドロ字幕（`https://jimaku.deadlock.jp/`）へ転送します。ボードは `streamers.deadlock.jp` です。`bunx wrangler deploy -c apps/redirect/wrangler.jsonc` で反映します。
+
+Deadlock APIへの要求には `User-Agent` を付けます（`packages/deadlock/src/api-client.ts`）。Workersの `fetch` は付けず、付けないとプレイヤーのAPIがCloudflareの403になります（2026年10月下旬から。ボードでは「ランク取得不可」と出ていました）。
 
 ## ローカル開発
 
@@ -113,7 +116,7 @@ cd ../..
 bun run --filter web deploy
 ```
 
-`BETTER_AUTH_SECRET` はローカルと異なるランダムな秘密値（32文字以上）、`BETTER_AUTH_URL` は実際の公開オリジン（例：`https://deadlock.jp`、パスなし）を入力します。CloudflareのGitビルドを使う場合は、webのWorkers設定でもこれらを設定してください。collectorの変更・再デプロイは不要です。秘密値をGitへコミットしないでください。
+`BETTER_AUTH_SECRET` はローカルと異なるランダムな秘密値（32文字以上）、`BETTER_AUTH_URL` は実際の公開オリジン（`https://streamers.deadlock.jp`、パスなし）を入力します。CloudflareのGitビルドを使う場合は、webのWorkers設定でもこれらを設定してください。collectorの変更・再デプロイは不要です。秘密値をGitへコミットしないでください。
 
 管理者作成・再設定は対話入力を使うため、`--filter` を使わず `apps/web` ディレクトリで直接実行してください。
 

@@ -14,6 +14,8 @@
 		"enabled": true
 	},
 	"upload_source_maps": true,
+	// deadlock.jp はデドロ字幕（jimaku.deadlock.jp）へ転送する（apps/redirect）。ボードはここに置く
+	"routes": [{ "pattern": "streamers.deadlock.jp", "custom_domain": true }],
 	"d1_databases": [
 		{
 			"binding": "DB",
