@@ -401,3 +401,17 @@ test("unobserved match history waits for a stream while ready and unavailable st
     sqlite.close();
   }
 });
+
+test("a rank blocked by Cloudflare is a failure, not an unavailable rank", async () => {
+  const blocked = steamApi(
+    undefined,
+    async () =>
+      new Response("<html>Attention Required! | Cloudflare</html>", {
+        status: 403,
+        headers: { "Content-Type": "text/html; charset=UTF-8" },
+      }),
+  );
+  await expect(blocked.rank(55)).rejects.toThrow("再試行");
+  const unavailable = steamApi(undefined, async () => new Response("", { status: 403 }));
+  expect(await unavailable.rank(55)).toBeNull();
+});
