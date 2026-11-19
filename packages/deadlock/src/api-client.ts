@@ -1,11 +1,15 @@
 import createClient from 'openapi-fetch';
 import type { paths } from './api';
 
+export const USER_AGENT = 'deadlock-jp (+https://streamers.deadlock.jp)';
+
 /** Shared requests; callers retain their own error and retry policies. */
 export function createDeadlockApi(apiKey?: string, request: typeof fetch = fetch, timeoutMs = 10_000) {
 	const client = createClient<paths>({
 		baseUrl: 'https://api.deadlock-api.com',
-		headers: apiKey ? { 'X-API-Key': apiKey } : {},
+		// Workers の fetch は User-Agent を付けない。deadlock-api の Cloudflare は、User-Agent のない
+		// データセンターからの要求をプレイヤーの API で 403（Attention Required）にする（2026-10 から）
+		headers: { 'User-Agent': USER_AGENT, ...(apiKey ? { 'X-API-Key': apiKey } : {}) },
 		fetch: request,
 		querySerializer: { array: { style: 'form', explode: false } },
 	});

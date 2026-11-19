@@ -41,6 +41,8 @@ test("typed client sends all four endpoints, credentials and query parameters", 
   });
   for (const request of requests) {
     expect(request.headers.get("X-API-Key")).toBe("test-key");
+    // User-Agent がないと、deadlock-api の Cloudflare が Workers からの要求を 403 にする
+    expect(request.headers.get("User-Agent")).toStartWith("deadlock-jp");
     expect(request.method).toBe("GET");
     expect(request.signal.aborted).toBe(false);
   }
